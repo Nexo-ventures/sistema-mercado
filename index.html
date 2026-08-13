@@ -586,8 +586,8 @@
     border-left: 3px solid transparent;
   }
   .item:last-child { border-bottom: none; }
-  .item.cal-past { border-left-color: var(--text-faint); }
-  .item.cal-future { border-left-color: var(--neutral); }
+  .item.cal-past { border-left-width: 4px; border-left-color: var(--text-faint); background: rgba(92, 99, 119, 0.05); }
+  .item.cal-future { border-left-width: 4px; border-left-color: var(--neutral); background: rgba(232, 176, 75, 0.05); }
 
   .tag {
     display: inline-block;
@@ -601,8 +601,8 @@
     color: var(--text-muted);
     margin-right: 0.4rem;
   }
-  .tag.cal-tag-past { color: var(--text-faint); }
-  .tag.cal-tag-future { color: var(--neutral); background: rgba(232, 176, 75, 0.08); }
+  .tag.cal-tag-past { color: var(--text-faint); background: rgba(92, 99, 119, 0.1); }
+  .tag.cal-tag-future { color: var(--neutral); background: rgba(232, 176, 75, 0.12); }
 
   .calendar-impact {
     font-size: 0.8rem;
