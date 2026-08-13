@@ -581,10 +581,13 @@
 
   /* --- NEWS / RADAR --- */
   .item {
-    padding: 0.7rem 0;
+    padding: 0.7rem 0 0.7rem 0.7rem;
     border-bottom: 1px solid var(--border);
+    border-left: 3px solid transparent;
   }
   .item:last-child { border-bottom: none; }
+  .item.cal-past { border-left-color: var(--text-faint); }
+  .item.cal-future { border-left-color: var(--neutral); }
 
   .tag {
     display: inline-block;
@@ -597,6 +600,16 @@
     background: var(--surface-2);
     color: var(--text-muted);
     margin-right: 0.4rem;
+  }
+  .tag.cal-tag-past { color: var(--text-faint); }
+  .tag.cal-tag-future { color: var(--neutral); background: rgba(232, 176, 75, 0.08); }
+
+  .calendar-impact {
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--border);
   }
 
   .item .headline { font-weight: 600; font-size: 0.88rem; margin: 0.35rem 0 0.15rem; }
@@ -1173,7 +1186,7 @@ async function renderCalendar() {
       .limit(15),
     sb
       .from('radar_eventos')
-      .select('expected_date,description,importance')
+      .select('expected_date,expected_time,description,importance,impact_note')
       .eq('theme', 'macro')
       .order('expected_date', { ascending: false })
       .limit(15),
@@ -1183,6 +1196,7 @@ async function renderCalendar() {
   for (const m of macro || []) {
     items.push({
       date: m.release_date,
+      time: null,
       isPast: true,
       title: m.indicator_name,
       detail: `${m.result ?? ''}${m.consensus ? ' · consenso: ' + m.consensus : ''}`,
@@ -1191,7 +1205,15 @@ async function renderCalendar() {
     })
   }
   for (const r of radarMacro || []) {
-    items.push({ date: r.expected_date, isPast: false, title: r.description, detail: '', tag: r.importance, note: '' })
+    items.push({
+      date: r.expected_date,
+      time: r.expected_time,
+      isPast: false,
+      title: r.description,
+      detail: '',
+      tag: r.importance,
+      note: r.impact_note,
+    })
   }
 
   if (items.length === 0) {
@@ -1202,17 +1224,19 @@ async function renderCalendar() {
   items.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 
   el.innerHTML = items
-    .map(
-      (it) => `
-    <div class="item">
-      <span class="tag">${it.isPast ? '✓' : '○'} ${escapeHtml(it.tag || '')}</span>
-      <span class="when">${it.date ? fmtDate(it.date) : 'data incerta'}</span>
+    .map((it) => {
+      const stateClass = it.isPast ? 'cal-past' : 'cal-future'
+      const whenText = it.date ? `${fmtDate(it.date)}${it.time ? ' · ' + escapeHtml(it.time) : ''}` : 'data incerta'
+      return `
+    <div class="item ${stateClass}">
+      <span class="tag ${it.isPast ? 'cal-tag-past' : 'cal-tag-future'}">${it.isPast ? '✓' : '○'} ${escapeHtml(it.tag || '')}</span>
+      <span class="when">${whenText}</span>
       <p class="headline">${escapeHtml(it.title)}</p>
       ${it.detail ? `<p class="summary">${escapeHtml(it.detail)}</p>` : ''}
-      ${it.note ? `<p class="summary" style="margin-top:0.2rem">${escapeHtml(it.note)}</p>` : ''}
+      ${it.note ? `<p class="calendar-impact">${it.isPast ? '📊' : '🔮'} ${escapeHtml(it.note)}</p>` : ''}
     </div>
   `
-    )
+    })
     .join('')
 }
 
