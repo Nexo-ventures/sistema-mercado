@@ -13,6 +13,7 @@
     --bg: #10131a;
     --surface: #191e29;
     --surface-2: #222838;
+    --surface-3: #2a3145;
     --border: #2b3244;
     --text: #edeef3;
     --text-muted: #9298ab;
@@ -73,17 +74,40 @@
     .col-side { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
   }
 
+  .tab-nav {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-top: 0.3rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    padding: 0.7rem 1.1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .tab-panel section { margin-bottom: 1.5rem; }
+  .tab-panel section:first-child { margin-top: 0; }
+
   .below-grid { margin-top: 1.75rem; }
 
   .stale-note {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--neutral);
-    background: rgba(232, 176, 75, 0.08);
-    border: 1px solid rgba(232, 176, 75, 0.25);
-    border-radius: 8px;
-    padding: 0.6rem 0.9rem;
-    margin-bottom: 1.25rem;
+    margin: 0.15rem 0 0.3rem;
   }
 
   .health-dot {
@@ -117,20 +141,9 @@
     border: 1px solid rgba(240, 69, 60, 0.25);
   }
 
-  .trace-row {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    padding: 0.35rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .trace-row:last-child { border-bottom: none; }
-
   .veredito-block { padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
   .veredito-block:last-child { border-bottom: none; }
   .veredito-row { display: flex; justify-content: space-between; align-items: center; }
-  .veredito-mercado { font-family: var(--font-mono); font-weight: 600; font-size: 0.85rem; }
   .veredito-decisao {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -153,14 +166,15 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 700;
-    margin-bottom: 0.4rem;
     display: inline-block;
   }
+  .cenario-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .cenario-prob { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--accent); }
   .cenario-tipo.expansao { color: var(--risk-on-strong); }
   .cenario-tipo.base { color: var(--text-muted); }
   .cenario-tipo.estresse { color: var(--risk-off-strong); }
-  .cenario-condicao { font-size: 0.85rem; color: var(--text); margin: 0 0 0.3rem; }
-  .cenario-efeito { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+  .cenario-condicao { font-size: 0.85rem; color: var(--text); margin: 0 0 0.3rem; max-width: 720px; }
+  .cenario-efeito { font-size: 0.82rem; color: var(--text-muted); margin: 0; max-width: 720px; }
 
   .fluxo-row {
     display: flex;
@@ -186,7 +200,15 @@
   .fluxo-status.saida { color: var(--risk-off-strong); background: rgba(240, 69, 60, 0.1); }
   .fluxo-status.neutro { color: var(--text-faint); background: var(--surface-2); }
 
-  .driver-row { padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
+  .driver-row { padding: 0.7rem 0; border-bottom: 1px solid var(--border); break-inside: avoid; }
+  .theme-trends-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .theme-card { background: var(--surface-2); border-radius: 8px; padding: 0.75rem 0.9rem; }
+  .theme-card-title { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .theme-today-driver { margin-bottom: 0.3rem; }
   .driver-row:last-child { border-bottom: none; }
   .driver-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
   .driver-nome { font-weight: 600; font-size: 0.85rem; }
@@ -197,24 +219,26 @@
   .driver-bar-fill.negativo { background: var(--risk-off-strong); }
   .driver-bar-fill.misto { background: var(--neutral); }
   .driver-next { font-size: 0.78rem; color: var(--text-muted); margin: 0.3rem 0 0; }
-  .driver-tema { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-faint); text-transform: uppercase; }
 
-  .progress-row { padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
-  .progress-row:last-child { border-bottom: none; }
-  .progress-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
-  .progress-symbol { font-weight: 600; font-size: 0.85rem; }
-  .progress-status {
+  .trace-h-block { padding: 0.45rem 0; border-bottom: 1px dashed var(--border); margin-left: 0.2rem; }
+  .pred-h-detail-slot { min-height: 1.6rem; }
+  .trace-h-block:last-child { border-bottom: none; }
+  .trace-h-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .trace-h-label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); flex-shrink: 0; }
+  .trace-h-detail { font-size: 0.75rem; color: var(--text-muted); }
+  .trace-h-line { font-size: 0.75rem; margin-top: 0.15rem; }
+  .trace-h-status {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
-    padding: 0.15rem 0.5rem;
+    padding: 0.1rem 0.4rem;
     border-radius: 4px;
     flex-shrink: 0;
+    margin-left: auto;
   }
-  .progress-status.ok { color: var(--risk-on-strong); background: rgba(63, 214, 126, 0.1); }
-  .progress-status.off { color: var(--risk-off-strong); background: rgba(240, 69, 60, 0.1); }
-  .progress-detail { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
-  .progress-detail:first-of-type { margin-top: 0.3rem; }
+  .trace-h-status.ok { color: var(--risk-on-strong); background: rgba(63, 214, 126, 0.1); }
+  .trace-h-status.off { color: var(--risk-off-strong); background: rgba(240, 69, 60, 0.1); }
+  .trace-h-status.pending { color: var(--text-faint); background: var(--surface-2); }
 
   .config-group { margin-bottom: 1.25rem; }
   .config-group:last-child { margin-bottom: 0; }
@@ -231,38 +255,6 @@
   .config-desc { font-size: 0.7rem; color: var(--text-faint); margin-top: 0.1rem; }
   .config-value { font-family: var(--font-mono); font-weight: 600; font-size: 0.8rem; flex-shrink: 0; color: var(--accent); }
   .config-value.muted-value { color: var(--text-faint); font-weight: 400; }
-
-  .signal-group-label {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-faint);
-    margin-bottom: 0.5rem;
-  }
-  .signal-chip-row {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.3rem 0;
-    font-size: 0.85rem;
-  }
-  .signal-row {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.35rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.85rem;
-  }
-  .signal-row:last-child { border-bottom: none; }
-  .signal-caveat {
-    font-size: 0.72rem;
-    color: var(--text-faint);
-    margin: 0 0 0.85rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border);
-  }
 
   .horizon-tabs {
     display: flex;
@@ -290,9 +282,7 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.15rem;
   }
 
   header.top h1 {
@@ -315,7 +305,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.35rem;
+    gap: 0.15rem;
   }
 
   .updated-badge {
@@ -381,6 +371,33 @@
   .fg-comp-name { color: var(--text-muted); }
   .fg-comp-val { font-family: var(--font-mono); font-weight: 600; }
 
+  .fg-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    column-gap: 2rem;
+  }
+  .fg-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .fg-detail-row:last-child { border-bottom: none; }
+  .fg-detail-name { font-weight: 600; font-size: 0.85rem; }
+  .fg-detail-desc { font-size: 0.75rem; color: var(--text-faint); margin-top: 0.15rem; }
+  .fg-detail-value { font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem; }
+  .fg-detail-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; }
+  .fg-detail-aggregate {
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    border-bottom: none;
+  }
+  .fg-detail-aggregate .fg-detail-name { font-size: 0.9rem; }
+  .fg-detail-aggregate .fg-detail-value { font-size: 1.4rem; }
+
   section {
     margin-bottom: 1.75rem;
   }
@@ -399,11 +416,28 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 1.5rem 1.25rem 1.25rem;
+    padding: 1rem 1rem 0.9rem;
     text-align: center;
   }
+  .gauge-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+  .gauge-group-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin: 1rem 0 0.6rem;
+  }
+  .gauge-group-label:first-child { margin-top: 0; }
+  .gauge-card-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; }
+  .gauge-empty-label { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 600; color: var(--text-muted); }
 
-  .gauge-svg { width: 100%; max-width: 280px; height: auto; }
+  .gauge-svg { width: 100%; max-width: 200px; height: auto; }
 
   .gauge-needle {
     transform-origin: 100px 105px;
@@ -412,17 +446,17 @@
 
   .gauge-score {
     font-family: var(--font-mono);
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    margin-top: -1.5rem;
+    margin-top: -1.1rem;
   }
 
   .gauge-label {
     font-family: var(--font-mono);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    margin-top: 0.2rem;
+    margin-top: 0.15rem;
   }
 
   .gauge-sub {
@@ -483,31 +517,94 @@
   .pred-dir.down { color: var(--risk-off-strong); }
   .pred-dir.flat { color: var(--text-faint); }
 
+  .pred-horizons-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-top: 0.6rem;
+  }
+  @media (max-width: 720px) {
+    .pred-horizons-grid { grid-template-columns: 1fr; }
+  }
+
+  .pred-h-col {
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 0.75rem 0.9rem;
+    border-left: 3px solid var(--border);
+  }
+  .pred-h-col.dir-up { border-left-color: var(--risk-on-strong); }
+  .pred-h-col.dir-down { border-left-color: var(--risk-off-strong); }
+  .pred-h-col.dir-flat { border-left-color: var(--text-faint); }
+  .pred-h-col.horizon-d { background: var(--surface-3, var(--surface-2)); }
+
   .pred-range {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    flex: 1;
+    margin-top: 0.35rem;
+    line-height: 1.4;
   }
 
   .pred-conf {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    width: 40px;
-    text-align: right;
-    flex-shrink: 0;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: var(--surface-3, rgba(255,255,255,0.05));
   }
+  .pred-conf.conf-high { color: var(--accent); font-weight: 700; }
+  .pred-conf.conf-mid { color: var(--text-muted); }
+  .pred-conf.conf-low { color: var(--text-faint); }
 
-  .pred-bar-track {
-    width: 34px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    flex-shrink: 0;
+  .pred-align {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
   }
-  .pred-bar-fill { height: 100%; background: var(--accent); }
+  .pred-align.aligned { color: var(--risk-on-strong); background: rgba(63, 214, 126, 0.1); }
+  .pred-align.mixed { color: var(--text-faint); background: var(--surface-2); }
+
+  .pred-change {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    padding: 0.08rem 0.35rem;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .pred-change.mantem { color: var(--text-faint); background: var(--surface-2); }
+  .pred-change.virou { color: var(--neutral); background: rgba(232, 176, 75, 0.12); font-weight: 700; }
+  .pred-change.reforcou { color: var(--risk-on-strong); background: rgba(63, 214, 126, 0.1); }
+  .pred-change.enfraqueceu { color: var(--risk-off-strong); background: rgba(240, 69, 60, 0.1); }
+
+  .pred-instrument-block { padding: 1.1rem 0; border-bottom: 2px solid var(--border); }
+  .pred-instrument-block:last-child { border-bottom: none; }
+  .pred-inst-header { margin-bottom: 0.3rem; }
+  .pred-symbol-big { font-family: var(--font-mono); font-weight: 700; font-size: 1.15rem; }
+  .pred-inst-header .pred-name { font-family: var(--font-sans); font-weight: 400; font-size: 0.8rem; color: var(--text-faint); margin-left: 0.6rem; }
+  .pred-current { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); float: right; }
+  .pred-accuracy {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface-2);
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    margin-left: 0.6rem;
+  }
+  .pred-accuracy.low-sample { color: var(--text-faint); background: transparent; border: 1px dashed var(--border); }
+  .pred-est { color: var(--text-faint); margin-left: 0.3rem; }
+  .pred-h-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .pred-h-label { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); }
+
+  .trace-h-mini { display: flex; gap: 0.6rem; font-size: 0.74rem; align-items: center; flex-wrap: wrap; }
+  .trace-h-mini .ok { color: var(--risk-on-strong); }
+  .trace-h-mini .off { color: var(--risk-off-strong); }
+  .trace-h-mini .pending { color: var(--text-muted); }
 
   details.pred-details summary {
     cursor: pointer;
@@ -520,6 +617,7 @@
     color: var(--text-muted);
     margin: 0.4rem 0 0;
   }
+  .detail-rationale { padding-bottom: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px dashed var(--border); }
 
   /* --- CARDS / GENERIC --- */
   .card {
@@ -545,8 +643,11 @@
     margin-bottom: 0.4rem;
   }
   .synth-block.alert .synth-label { color: var(--neutral); }
+  .prose-highlight { color: var(--accent); font-weight: 700; }
+  .prose-highlight-date { color: var(--neutral); font-weight: 700; }
 
-  .prose-p { font-size: 0.92rem; color: var(--text); margin: 0; line-height: 1.6; }
+  .prose-p { font-size: 0.92rem; color: var(--text); margin: 0 0 0.75rem; line-height: 1.6; max-width: 720px; }
+  .prose-p:last-child { margin-bottom: 0; }
 
   .synth-list { list-style: none; margin: 0; padding: 0; }
   .synth-list li {
@@ -577,6 +678,15 @@
     color: var(--accent);
   }
 
+  .track-horizon-row {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.85rem;
+  }
+
   .muted { color: var(--text-muted); font-size: 0.85rem; }
 
   /* --- NEWS / RADAR --- */
@@ -586,8 +696,33 @@
     border-left: 3px solid transparent;
   }
   .item:last-child { border-bottom: none; }
-  .item.cal-past { border-left-width: 4px; border-left-color: var(--text-faint); background: rgba(92, 99, 119, 0.05); }
-  .item.cal-future { border-left-width: 4px; border-left-color: var(--neutral); background: rgba(232, 176, 75, 0.05); }
+  .item.cal-past { border-left-width: 4px; border-left-color: var(--border); }
+  .cal-status-badge {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-right: 0.4rem;
+  }
+  .cal-status-badge.past { color: var(--text-faint); background: rgba(92, 99, 119, 0.15); }
+  .cal-status-badge.future { color: var(--neutral); background: rgba(232, 176, 75, 0.15); }
+  .item.cal-future { border-left-width: 4px; border-left-color: var(--border); }
+
+  .type-badge {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-right: 0.4rem;
+  }
+  .type-badge.type-noticia { color: var(--text-muted); background: var(--surface-2); }
+  .type-badge.type-radar { color: var(--neutral); background: rgba(232, 176, 75, 0.15); }
+  .type-badge.type-expired { color: var(--text-faint); background: var(--surface-2); }
+  .type-badge.type-vencida { color: var(--risk-off-strong); background: rgba(240, 69, 60, 0.15); }
 
   .tag {
     display: inline-block;
@@ -617,7 +752,8 @@
   .item .when { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); }
 
   /* --- SNAPSHOT --- */
-  .class-group { margin-bottom: 1rem; }
+  .class-group { margin-bottom: 2.5rem; }
+  .class-group:last-child { margin-bottom: 0; }
   .class-title {
     font-family: var(--font-mono);
     font-size: 0.72rem;
@@ -626,34 +762,26 @@
     color: var(--text-faint);
     margin-bottom: 0.4rem;
   }
-  .snap-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.5rem;
+  .pred-class-title {
     font-family: var(--font-mono);
-    font-size: 0.8rem;
-    padding: 0.3rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .snap-row:last-child { border-bottom: none; }
-  .snap-name {
-    font-family: var(--font-sans);
-    color: var(--text-faint);
-    font-size: 0.7rem;
-    margin-left: 0.4rem;
-  }
-  .snap-chg.up { color: var(--risk-on-strong); }
-  .snap-chg.down { color: var(--risk-off-strong); }
-  .snap-chg.flat { color: var(--text-faint); }
-
-  .pred-more summary {
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--accent);
-    padding: 0.3rem 0;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
   }
+  .class-fluxo {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .class-fluxo .fluxo-motivo { margin-top: 0; }
 
   details.section-collapse > summary {
     cursor: pointer;
@@ -738,21 +866,17 @@ const FG_COMPONENT_LABELS = {
   safe_haven_demand: 'Refúgio seguro',
   junk_bond_demand: 'Junk bonds',
 }
-const MERCADO_LABELS = { brasil: 'Brasil', eua: 'EUA', europa: 'Europa' }
+const FG_COMPONENT_DESC = {
+  market_momentum: 'S&P 500 vs. sua média móvel de 125 dias',
+  stock_price_strength: 'Ações em máxima de 52 semanas vs. mínima (NYSE)',
+  stock_price_breadth: 'Volume negociado em ações subindo vs. caindo',
+  put_call_options: 'Opções de venda (proteção) vs. opções de compra',
+  market_volatility: 'VIX comparado à sua própria média de 50 dias',
+  safe_haven_demand: 'Retorno de ações vs. títulos do Tesouro americano',
+  junk_bond_demand: 'Diferença de juro entre título seguro e título de risco',
+}
 const CENARIO_LABELS = { expansao: 'Expansão', base: 'Base', estresse: 'Estresse' }
 const HORIZON_LABELS = { '1D': '1 dia', '1W': '1 semana', '1M': '1 mês' }
-
-let allPredictions = []
-let currentHorizon = '1D'
-
-function switchHorizon(h) {
-  currentHorizon = h
-  const container = document.getElementById('predictions-container')
-  if (container) container.innerHTML = renderPredictions(allPredictions, h)
-  document.querySelectorAll('.horizon-btn').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.horizon === h)
-  })
-}
 
 function escapeHtml(str) {
   if (str == null) return ''
@@ -778,272 +902,488 @@ function fmtDate(iso) {
 
 function directionArrow(dir) { return dir === 'alta' ? '↑' : dir === 'baixa' ? '↓' : '→' }
 function directionClass(dir) { return dir === 'alta' ? 'up' : dir === 'baixa' ? 'down' : 'flat' }
+function confClass(pct) {
+  const n = Number(pct)
+  if (n >= 55) return 'conf-high'
+  if (n >= 45) return 'conf-mid'
+  return 'conf-low'
+}
 
 function gaugeAngle(score) {
   const clamped = Math.max(-100, Math.min(100, score))
   return (clamped / 100) * 90
 }
 
-function renderGauge(regimes) {
-  const eua = (regimes || []).find(r => r.mercado === 'eua')
-  const others = (regimes || []).filter(r => r.mercado !== 'eua')
+// Ponto (x,y) no arco do gauge pra um score dado — mesmo centro/raio
+// do desenho (100,105 · r=85), mesma fórmula de ângulo do ponteiro.
+// Verificado contra os pontos fixos originais (-40/-15/15/40) antes
+// de virar dinâmico, pra garantir que a matemática bate.
+function gaugePoint(score) {
+  const angleRad = (gaugeAngle(score) * Math.PI) / 180
+  const x = 100 + 85 * Math.sin(angleRad)
+  const y = 105 - 85 * Math.cos(angleRad)
+  return `${x.toFixed(1)},${y.toFixed(1)}`
+}
 
-  if (!eua) {
-    return `<div class="gauge-card"><p class="muted">Regime ainda não calculado hoje.</p></div>`
-  }
+const DECISAO_LABELS = { compra: 'Viés Positivo', venda: 'Viés Negativo', fora: 'Neutro' }
 
-  const scoreNum = Number(eua.global_score)
-  const angle = gaugeAngle(scoreNum)
-  const color = REGIME_COLORS[eua.label] || 'var(--text-muted)'
-  const otherLine = ['brasil', 'europa']
-    .map(m => {
-      const r = others.find(x => x.mercado === m)
-      const name = m === 'brasil' ? 'Brasil' : 'Europa'
-      return r ? `${name}: ${REGIME_LABELS[r.label]}` : `${name}: acumulando histórico`
-    })
-    .join(' · ')
-
+function renderVeredictoBlock(v) {
+  if (!v) return ''
   return `
-    <div class="gauge-card">
-      <svg class="gauge-svg" viewBox="0 0 200 120">
-        <path d="M 15,105 A 85,85 0 0 1 50.0,36.2" stroke="var(--risk-off-strong)" stroke-width="14" fill="none" stroke-linecap="round"/>
-        <path d="M 50.0,36.2 A 85,85 0 0 1 80.2,22.3" stroke="var(--risk-off)" stroke-width="14" fill="none" stroke-linecap="round"/>
-        <path d="M 80.2,22.3 A 85,85 0 0 1 119.8,22.3" stroke="var(--neutral)" stroke-width="14" fill="none" stroke-linecap="round"/>
-        <path d="M 119.8,22.3 A 85,85 0 0 1 150.0,36.2" stroke="var(--risk-on)" stroke-width="14" fill="none" stroke-linecap="round"/>
-        <path d="M 150.0,36.2 A 85,85 0 0 1 185,105" stroke="var(--risk-on-strong)" stroke-width="14" fill="none" stroke-linecap="round"/>
-        <line class="gauge-needle" x1="100" y1="105" x2="100" y2="28" stroke="var(--text)" stroke-width="3" stroke-linecap="round"
-          style="transform: rotate(${angle}deg)"/>
-        <circle cx="100" cy="105" r="5" fill="var(--text)"/>
-      </svg>
-      <div class="gauge-score" style="color:${color}">${scoreNum.toFixed(0)}</div>
-      <div class="gauge-label" style="color:${color}">${REGIME_LABELS[eua.label]} · EUA</div>
-      <div class="gauge-sub">${otherLine}</div>
-    </div>
-  `
-}
-
-function renderFearGreed(fg) {
-  if (!fg) return ''
-  const components = fg.fear_greed_components || []
-  const grid = components.length > 0
-    ? `<div class="fg-components">${components.map(c => `
-        <div class="fg-comp-row">
-          <span class="fg-comp-name">${FG_COMPONENT_LABELS[c.component] || c.component}</span>
-          <span class="fg-comp-val">${Number(c.value).toFixed(0)}</span>
-        </div>
-      `).join('')}</div>`
-    : ''
-  return `
-    <div class="fg-row">
-      <span>F&amp;G <span class="fg-val">${fg.index_value}</span> <span class="muted">(${fg.label})</span></span>
-    </div>
-    ${grid}
-  `
-}
-
-function renderHighlights(latestBySymbol, instruments) {
-  const analyzed = (instruments || []).filter(i => i.is_analyzed)
-  const withChange = analyzed
-    .map(i => ({ symbol: i.symbol_internal, change_pct: latestBySymbol[i.symbol_internal]?.change_pct }))
-    .filter(x => x.change_pct != null)
-    .map(x => ({ ...x, change_pct: Number(x.change_pct) }))
-
-  if (withChange.length === 0) return ''
-
-  const sorted = [...withChange].sort((a, b) => b.change_pct - a.change_pct)
-  const top = sorted[0]
-  const bottom = sorted[sorted.length - 1]
-
-  return `
-    <div class="highlight-card">
-      <div class="hl-item">
-        <span class="hl-label">Maior alta</span>
-        <span class="hl-value" style="color:var(--risk-on-strong)">${top.symbol} +${top.change_pct.toFixed(2)}%</span>
-      </div>
-      <div class="hl-item">
-        <span class="hl-label">Maior queda</span>
-        <span class="hl-value" style="color:var(--risk-off-strong)">${bottom.symbol} ${bottom.change_pct.toFixed(2)}%</span>
-      </div>
-    </div>
-  `
-}
-
-function renderPredictionRow(p) {
-  const sym = escapeHtml(p.instruments?.symbol_internal || '?')
-  const name = escapeHtml(p.instruments?.name || '')
-  const dir = directionClass(p.direction)
-  const range = (p.magnitude_min_pct != null && p.magnitude_max_pct != null)
-    ? `${p.magnitude_min_pct}% a ${p.magnitude_max_pct}%` : ''
-  return `
-    <div class="pred-row">
-      <span class="pred-symbol">${sym}<span class="pred-name">${name}</span></span>
-      <span class="pred-dir ${dir}">${directionArrow(p.direction)}</span>
-      <span class="pred-range">${range}</span>
-      <span class="pred-bar-track"><span class="pred-bar-fill" style="width:${p.confidence_pct}%"></span></span>
-      <span class="pred-conf">${p.confidence_pct}%</span>
-    </div>
-    ${p.rationale ? `<details class="pred-details"><summary>por quê</summary><p>${escapeHtml(p.rationale)}</p></details>` : ''}
-  `
-}
-
-function renderPredictions(preds, horizon) {
-  const filtered = (preds || []).filter((p) => p.horizon === horizon)
-  if (filtered.length === 0) {
-    return `<p class="muted">Nenhum palpite de horizonte ${HORIZON_LABELS[horizon] || horizon} gerado ainda.</p>`
-  }
-
-  const byClass = {}
-  const order = []
-  for (const p of filtered) {
-    const cls = p.instruments?.asset_class || 'outros'
-    if (!byClass[cls]) { byClass[cls] = []; order.push(cls) }
-    byClass[cls].push(p)
-  }
-
-  const TOP_N = 3
-
-  return order.map(cls => {
-    const items = byClass[cls]
-    const visible = items.slice(0, TOP_N)
-    const rest = items.slice(TOP_N)
-    return `
-      <div class="class-group">
-        <div class="class-title">${ASSET_CLASS_LABELS[cls] || cls} (${items.length})</div>
-        ${visible.map(renderPredictionRow).join('')}
-        ${rest.length > 0 ? `
-          <details class="pred-more">
-            <summary>ver mais ${rest.length}</summary>
-            ${rest.map(renderPredictionRow).join('')}
-          </details>
-        ` : ''}
-      </div>
-    `
-  }).join('')
-}
-
-function renderEntrySignals(preds, veredictos, fluxos) {
-  const caveat = `<p class="signal-caveat">⚠ Acurácia direcional ainda não está provada com histórico suficiente — trate como apoio à decisão, não como sinal automático pra dinheiro real.</p>`
-
-  const activeVeredictos = (veredictos || []).filter((v) => v.decisao !== 'fora')
-  const activeFluxos = (fluxos || []).filter((f) => f.status !== 'neutro')
-  const topPalpites = (preds || [])
-    .filter((p) => p.horizon === '1D' && p.direction !== 'lateral')
-    .sort((a, b) => Number(b.confidence_pct) - Number(a.confidence_pct))
-    .slice(0, 8)
-
-  const hasAnything = activeVeredictos.length > 0 || activeFluxos.length > 0 || topPalpites.length > 0
-  if (!hasAnything) {
-    return `${caveat}<p class="muted">Nenhum sinal de entrada/saída ativo hoje — veredicto e fluxo neutros, sem palpite direcional forte.</p>`
-  }
-
-  const parts = [caveat]
-
-  if (activeVeredictos.length > 0) {
-    parts.push(`<div class="signal-group-label">Veredicto por mercado</div>`)
-    parts.push(
-      activeVeredictos
-        .map(
-          (v) => `
-      <div class="signal-chip-row">
-        <span class="veredito-decisao ${v.decisao}">${v.decisao}</span>
-        <span>${MERCADO_LABELS[v.mercado] || v.mercado}</span>
-      </div>
-    `
-        )
-        .join('')
-    )
-  }
-
-  if (activeFluxos.length > 0) {
-    parts.push(`<div class="signal-group-label" style="margin-top:0.85rem">Fluxo por classe</div>`)
-    parts.push(
-      activeFluxos
-        .map(
-          (f) => `
-      <div class="signal-chip-row">
-        <span class="fluxo-status ${f.status}">${f.status}</span>
-        <span>${ASSET_CLASS_LABELS[f.asset_class] || f.asset_class}</span>
-      </div>
-    `
-        )
-        .join('')
-    )
-  }
-
-  if (topPalpites.length > 0) {
-    parts.push(`<div class="signal-group-label" style="margin-top:0.85rem">Palpites de maior convicção (1 dia)</div>`)
-    parts.push(
-      topPalpites
-        .map((p) => {
-          const sym = escapeHtml(p.instruments?.symbol_internal || '?')
-          const dir = directionClass(p.direction)
-          return `
-        <div class="signal-row">
-          <span class="pred-symbol">${sym}</span>
-          <span class="pred-dir ${dir}">${directionArrow(p.direction)}</span>
-          <span class="pred-conf">${p.confidence_pct}%</span>
-        </div>
-      `
-        })
-        .join('')
-    )
-  }
-
-  return parts.join('')
-}
-
-function renderVeredito(veredictos) {
-  if (!veredictos || veredictos.length === 0) return `<p class="muted">Veredicto ainda não gerado hoje.</p>`
-  const order = ['eua', 'brasil', 'europa']
-  const sorted = [...veredictos].sort((a, b) => order.indexOf(a.mercado) - order.indexOf(b.mercado))
-  return sorted
-    .map(
-      (v) => `
-    <div class="veredito-block">
+    <div class="veredito-block" style="text-align:left;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
       <div class="veredito-row">
-        <span class="veredito-mercado">${MERCADO_LABELS[v.mercado] || v.mercado}</span>
-        <span class="veredito-decisao ${v.decisao}">${v.decisao}</span>
+        <span class="veredito-decisao ${v.decisao}">${DECISAO_LABELS[v.decisao] || v.decisao}</span>
       </div>
       <p class="veredito-razao">${escapeHtml(v.razao)}</p>
       ${v.invalidation_note ? `<p class="veredito-razao" style="color:var(--neutral);margin-top:0.3rem">⚡ Mudaria se: ${escapeHtml(v.invalidation_note)}</p>` : ''}
     </div>
   `
-    )
+}
+
+function renderSingleGauge(marketLabel, r, veredito, ontemScore, th) {
+  th = th || { forte: 40, fraco: 15, offMod: -15, offForte: -40 }
+  if (!r) {
+    return `
+      <div class="gauge-card gauge-card-empty">
+        <div class="gauge-empty-label">${marketLabel}</div>
+        <p class="muted" style="margin-top:1.5rem">Acumulando histórico</p>
+        ${renderVeredictoBlock(veredito)}
+      </div>
+    `
+  }
+  const scoreNum = Number(r.global_score)
+  const angle = gaugeAngle(scoreNum)
+  const color = REGIME_COLORS[r.label] || 'var(--text-muted)'
+
+  // Item 1: delta vs. o dia anterior disponível — nível atual sozinho
+  // diz bem menos que "subiu 11 pts" ou "caiu 17 pts".
+  let deltaHtml = ''
+  if (ontemScore != null) {
+    const delta = scoreNum - Number(ontemScore)
+    if (Math.abs(delta) >= 1) {
+      const seta = delta > 0 ? '↑' : '↓'
+      const cor = delta > 0 ? 'var(--risk-on-strong)' : 'var(--risk-off-strong)'
+      deltaHtml = `<div style="font-size:0.72rem;color:${cor};margin-top:0.15rem" title="Era ${Number(ontemScore).toFixed(0)} no dia anterior">${seta} ${Math.abs(delta).toFixed(0)} pts vs. dia anterior</div>`
+    } else {
+      deltaHtml = `<div style="font-size:0.72rem;color:var(--text-faint);margin-top:0.15rem">→ estável vs. dia anterior</div>`
+    }
+  }
+
+  // Item 8: score nunca deveria ser caixa-preta — os sub-scores já
+  // eram calculados, só nunca apareciam na tela.
+  const subScores = [
+    { label: 'Ações', val: r.equity_score },
+    { label: 'Crédito', val: r.credit_score },
+    { label: 'Volatilidade', val: r.volatility_score },
+    { label: 'Juros', val: r.rates_score },
+    { label: 'Câmbio', val: r.fx_score },
+  ].filter((s) => s.val != null)
+  const coberturaHtml = `<div style="font-size:0.68rem;color:var(--text-faint);margin-top:0.1rem">${subScores.length}/5 sinais disponíveis</div>`
+  const scoreDetailHtml =
+    subScores.length > 0
+      ? `
+    <details class="pred-details" style="margin-top:0.5rem;text-align:left">
+      <summary>composição do score</summary>
+      <div style="margin-top:0.3rem">
+        ${subScores
+          .map(
+            (s) =>
+              `<div style="display:flex;justify-content:space-between;font-size:0.75rem;padding:0.15rem 0"><span class="muted">${s.label}</span><strong style="color:${Number(s.val) >= 0 ? 'var(--risk-on-strong)' : 'var(--risk-off-strong)'}">${Number(s.val) > 0 ? '+' : ''}${Number(s.val).toFixed(0)}</strong></div>`
+          )
+          .join('')}
+      </div>
+    </details>
+  `
+      : ''
+
+  return `
+    <div class="gauge-card">
+      <svg class="gauge-svg" viewBox="0 0 200 120">
+        <path d="M 15,105 A 85,85 0 0 1 ${gaugePoint(th.offForte)}" stroke="var(--risk-off-strong)" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M ${gaugePoint(th.offForte)} A 85,85 0 0 1 ${gaugePoint(th.offMod)}" stroke="var(--risk-off)" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M ${gaugePoint(th.offMod)} A 85,85 0 0 1 ${gaugePoint(th.fraco)}" stroke="var(--neutral)" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M ${gaugePoint(th.fraco)} A 85,85 0 0 1 ${gaugePoint(th.forte)}" stroke="var(--risk-on)" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M ${gaugePoint(th.forte)} A 85,85 0 0 1 185,105" stroke="var(--risk-on-strong)" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <line class="gauge-needle" x1="100" y1="105" x2="100" y2="28" stroke="var(--text)" stroke-width="3" stroke-linecap="round"
+          style="transform: rotate(${angle}deg)"/>
+        <circle cx="100" cy="105" r="5" fill="var(--text)"/>
+      </svg>
+      <div class="gauge-score" style="color:${color}">${scoreNum.toFixed(0)}</div>
+      <div class="gauge-label" style="color:${color}">${REGIME_LABELS[r.label]} · ${marketLabel}</div>
+      ${deltaHtml}
+      ${coberturaHtml}
+      ${scoreDetailHtml}
+      ${renderVeredictoBlock(veredito)}
+    </div>
+  `
+}
+
+function renderGauge(regimes, veredictos, thresholds, regimeOntem) {
+  const byMarket = {}
+  for (const r of regimes || []) byMarket[r.mercado] = r
+  const veredictoByMarket = {}
+  for (const v of veredictos || []) veredictoByMarket[v.mercado] = v
+  const ontemByMarket = {}
+  for (const r of regimeOntem || []) ontemByMarket[r.mercado] = Number(r.global_score)
+
+  // Item 9: os limites de cada faixa já existiam (configuráveis),
+  // só nunca apareciam pro usuário — usa o valor real se customizado,
+  // senão cai no padrão do sistema.
+  const thByKey = {}
+  for (const t of thresholds || []) thByKey[t.key] = Number(t.value)
+  const forte = thByKey['regime_threshold_risk_on_forte'] ?? 40
+  const fraco = thByKey['regime_threshold_risk_on_fraco'] ?? 15
+  const offMod = thByKey['regime_threshold_risk_off_moderado'] ?? -15
+  const offForte = thByKey['regime_threshold_risk_off_forte'] ?? -40
+  const legendaHtml = `
+    <details class="pred-details" style="margin-bottom:1rem">
+      <summary>o que cada faixa de score significa</summary>
+      <div style="margin-top:0.3rem;font-size:0.78rem">
+        <p><span style="color:var(--risk-on-strong)">●</span> Risk-On Forte: ${forte} a 100</p>
+        <p><span style="color:var(--risk-on)">●</span> Risk-On Fraco: ${fraco} a ${forte - 1}</p>
+        <p><span style="color:var(--neutral)">●</span> Neutro: ${offMod + 1} a ${fraco - 1}</p>
+        <p><span style="color:var(--risk-off)">●</span> Risk-Off Moderado: ${offForte + 1} a ${offMod}</p>
+        <p><span style="color:var(--risk-off-strong)">●</span> Risk-Off Forte: -100 a ${offForte}</p>
+      </div>
+    </details>
+  `
+
+  // Item 6: mapa global compacto — leitura de 2 segundos antes de
+  // entrar nos gauges individuais. Global = média dos 3 países (não
+  // inclui setores, que são recorte mais específico).
+  const paisesComScore = ['eua', 'brasil', 'europa'].map((m) => byMarket[m]).filter(Boolean)
+  let mapaHtml = ''
+  if (paisesComScore.length > 0) {
+    const globalScore = paisesComScore.reduce((s, r) => s + Number(r.global_score), 0) / paisesComScore.length
+    const globalLabel = globalScore >= forte ? 'risk_on_forte' : globalScore >= fraco ? 'risk_on_fraco' : globalScore > offMod ? 'neutro' : globalScore > offForte ? 'risk_off_moderado' : 'risk_off_forte'
+    const globalColor = REGIME_COLORS[globalLabel]
+    const scores = Number(paisesComScore.reduce((s, r) => s + Number(r.global_score), 0) / paisesComScore.length)
+
+    // dispersão entre países — EUA em risk-on com Brasil em risk-off é
+    // informação por si só, não só a média escondendo os dois.
+    const paisScores = paisesComScore.map((r) => Number(r.global_score))
+    const dispersao = paisScores.length > 1 ? Math.max(...paisScores) - Math.min(...paisScores) : 0
+    const dispersaoLabel = dispersao >= 40 ? 'alta' : dispersao >= 15 ? 'média' : 'baixa'
+
+    const chipsHtml = [
+      ['eua', 'EUA'],
+      ['brasil', 'Brasil'],
+      ['europa', 'Europa'],
+      ['tech', 'Tech'],
+      ['semicondutores', 'Semi'],
+    ]
+      .map(([key, label]) => {
+        const r = byMarket[key]
+        if (!r) return ''
+        const s = Number(r.global_score)
+        const ontem = ontemByMarket[key]
+        const c = REGIME_COLORS[r.label]
+        let arrow = ''
+        if (ontem != null) {
+          const d = s - ontem
+          arrow = Math.abs(d) < 1 ? ' →' : d > 0 ? ` ↑${Math.abs(d).toFixed(0)}` : ` ↓${Math.abs(d).toFixed(0)}`
+        }
+        return `<span style="margin-right:1rem"><span class="muted">${label}</span> <strong style="color:${c}">${s.toFixed(0)}${arrow}</strong></span>`
+      })
+      .join('')
+
+    mapaHtml = `
+      <div class="card" style="padding:0.8rem 1.1rem;margin-bottom:1rem">
+        <div style="font-size:0.95rem"><strong style="color:${globalColor}">GLOBAL: ${REGIME_LABELS[globalLabel]} · ${scores.toFixed(0)}</strong> <span class="muted" style="font-size:0.78rem">· dispersão entre países: ${dispersaoLabel}</span></div>
+        <div style="margin-top:0.5rem;font-size:0.85rem">${chipsHtml}</div>
+      </div>
+    `
+  }
+
+  return `
+    ${mapaHtml}
+    ${legendaHtml}
+    <div class="gauge-group-label">Países</div>
+    <div class="gauge-row">
+      ${renderSingleGauge('EUA', byMarket['eua'], veredictoByMarket['eua'], ontemByMarket['eua'], { forte, fraco, offMod, offForte })}
+      ${renderSingleGauge('Brasil', byMarket['brasil'], veredictoByMarket['brasil'], ontemByMarket['brasil'], { forte, fraco, offMod, offForte })}
+      ${renderSingleGauge('Europa', byMarket['europa'], veredictoByMarket['europa'], ontemByMarket['europa'], { forte, fraco, offMod, offForte })}
+    </div>
+    <div class="gauge-group-label">Setores</div>
+    <div class="gauge-row">
+      ${renderSingleGauge('Tech', byMarket['tech'], null, ontemByMarket['tech'], { forte, fraco, offMod, offForte })}
+      ${renderSingleGauge('Semicondutores', byMarket['semicondutores'], null, ontemByMarket['semicondutores'], { forte, fraco, offMod, offForte })}
+    </div>
+  `
+}
+
+function fgLabelColor(label) {
+  if (!label) return 'var(--text-muted)'
+  const l = label.toLowerCase()
+  if (l.includes('greed')) return 'var(--risk-on-strong)'
+  if (l.includes('fear')) return 'var(--risk-off-strong)'
+  return 'var(--text-faint)'
+}
+
+function fmtPrice(v) {
+  if (v == null) return '?'
+  const abs = Math.abs(v)
+  const digits = abs >= 1000 ? 0 : abs >= 1 ? 2 : 4
+  return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+}
+
+function estimateRange(current, minPct, maxPct, direction) {
+  if (current == null || minPct == null || maxPct == null) return null
+  const lo = Math.min(Math.abs(minPct), Math.abs(maxPct))
+  const hi = Math.max(Math.abs(minPct), Math.abs(maxPct))
+  if (direction === 'baixa') return { lo: current * (1 - hi / 100), hi: current * (1 - lo / 100) }
+  if (direction === 'alta') return { lo: current * (1 + lo / 100), hi: current * (1 + hi / 100) }
+  return { lo: current * (1 - hi / 100), hi: current * (1 + hi / 100) }
+}
+
+function fmtShortDate(dateStr) {
+  if (!dateStr) return '?'
+  const d = new Date(dateStr + 'T12:00:00')
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+const HORIZON_LETTER = { '1D': 'D', '1W': 'S', '1M': 'M' }
+
+function renderPredictionInstrument(item, latestBySymbol, accuracyByInstrument, ontemByKey) {
+  const sym = escapeHtml(item.sym)
+  const name = escapeHtml(item.name || '')
+  const current = latestBySymbol?.[item.sym]?.close
+  const horizons = ['1D', '1W', '1M']
+
+  const acc = accuracyByInstrument?.[item.instrumentId]
+  const accBadge =
+    acc && acc.total > 0
+      ? `<span class="pred-accuracy ${acc.total < 20 ? 'low-sample' : ''}" title="Acerto histórico de direção, palpites de 1 dia${acc.total < 20 ? ' — amostra pequena, ainda não é estatisticamente confiável' : ''}">🎯 D ${acc.correct}/${acc.total}</span>`
+      : ''
+
+  // Item 2: alinhamento entre D/S/M — os 3 concordando é uma tese mais
+  // coerente do que sinais mistos entre horizontes.
+  const presentDirs = horizons.map((h) => item.byHorizon[h]?.direction).filter(Boolean)
+  let alinhamentoBadge = ''
+  if (presentDirs.length >= 2) {
+    const allSame = presentDirs.every((d) => d === presentDirs[0])
+    alinhamentoBadge = allSame
+      ? `<span class="pred-align aligned" title="D, S e M concordam na direção">${directionArrow(presentDirs[0])} alinhado</span>`
+      : `<span class="pred-align mixed" title="Os horizontes não concordam entre si">sinais mistos</span>`
+  }
+
+  const cols = horizons
+    .map((h) => {
+      const p = item.byHorizon[h]
+      const dateLabel = `<span class="pred-h-label" title="${HORIZON_LABELS[h]}">${HORIZON_LETTER[h]}·${fmtShortDate(p?.target_date)}</span>`
+      if (!p) return `<div class="pred-h-col"><div class="pred-h-row">${dateLabel}<span class="muted" style="font-size:0.75rem">sem palpite</span></div></div>`
+      const dir = directionClass(p.direction)
+      const range = p.magnitude_min_pct != null && p.magnitude_max_pct != null ? `${p.magnitude_min_pct}% a ${p.magnitude_max_pct}%` : ''
+      const est = estimateRange(p.reference_price, p.magnitude_min_pct, p.magnitude_max_pct, p.direction)
+      const estText = est ? `→ ${fmtPrice(est.lo)} a ${fmtPrice(est.hi)}` : ''
+      const rationale = p.rationale ? `<details class="pred-details" style="margin-top:0.3rem"><summary>tese</summary><p class="detail-rationale">${escapeHtml(p.rationale)}</p></details>` : ''
+
+      // Item 1: mudança vs. o palpite de ontem pro mesmo ativo+horizonte
+      // — "MANTÉM" persistente é uma tese diferente de "VIROU" recente.
+      const ontem = ontemByKey?.[item.instrumentId + '|' + h]
+      let mudancaBadge = ''
+      if (ontem) {
+        if (ontem.direction !== p.direction) {
+          mudancaBadge = `<span class="pred-change virou" title="Ontem era ${ontem.direction}">VIROU ${directionArrow(p.direction)}</span>`
+        } else {
+          const deltaConf = p.confidence_pct - ontem.confidence_pct
+          if (Math.abs(deltaConf) >= 5) {
+            mudancaBadge = `<span class="pred-change ${deltaConf > 0 ? 'reforcou' : 'enfraqueceu'}" title="Ontem: ${ontem.confidence_pct}%">CONV ${deltaConf > 0 ? '+' : ''}${deltaConf}pp</span>`
+          } else {
+            mudancaBadge = `<span class="pred-change mantem" title="Mesma direção e convicção parecida desde ontem">MANTÉM</span>`
+          }
+        }
+      }
+
+      return `
+        <div class="pred-h-col dir-${dir}${h === '1D' ? ' horizon-d' : ''}">
+          <div class="pred-h-row">
+            ${dateLabel}
+            <span class="pred-dir ${dir}">${directionArrow(p.direction)}</span>
+            <span class="pred-conf ${confClass(p.confidence_pct)}" title="Convicção declarada pela IA">conv. ${p.confidence_pct}%</span>
+          </div>
+          <div class="pred-range">${range}<span class="pred-est">${estText}</span></div>
+          ${mudancaBadge ? `<div style="margin-top:0.3rem">${mudancaBadge}</div>` : ''}
+          <div id="rast-${item.sym}-${h}" class="pred-h-detail-slot"><p class="muted" style="font-size:0.75rem">carregando…</p></div>
+          ${rationale}
+        </div>
+      `
+    })
     .join('')
+
+  return `
+    <div class="pred-instrument-block">
+      <div class="pred-inst-header">
+        <span class="pred-symbol-big">${sym}</span>
+        <span class="pred-name">${name}</span>
+        ${alinhamentoBadge}
+        ${accBadge}
+        ${current != null ? `<span class="pred-current">atual: ${fmtPrice(current)}</span>` : ''}
+      </div>
+      <div class="pred-horizons-grid">${cols}</div>
+    </div>
+  `
+}
+
+const FLUXO_LABELS = { entrada: 'Positivo', saida: 'Negativo', neutro: 'Neutro' }
+
+function renderPredictions(preds, latestBySymbol, accuracyByInstrument, fluxos, predsOntem) {
+  if (!preds || preds.length === 0) {
+    return `<p class="muted">Nenhum palpite gerado ainda.</p>`
+  }
+
+  const fluxoByClass = {}
+  for (const f of fluxos || []) fluxoByClass[f.asset_class] = f
+
+  // Item 1: lookup do palpite de ontem por ativo+horizonte, pra
+  // detectar mudança de direção/convicção.
+  const ontemByKey = {}
+  for (const p of predsOntem || []) {
+    ontemByKey[p.instrument_id + '|' + p.horizon] = p
+  }
+
+  const byInstrument = {}
+  for (const p of preds) {
+    const sym = p.instruments?.symbol_internal || '?'
+    if (!byInstrument[sym]) byInstrument[sym] = { sym, name: p.instruments?.name, cls: p.instruments?.asset_class, instrumentId: p.instrument_id, byHorizon: {} }
+    byInstrument[sym].byHorizon[p.horizon] = p
+  }
+
+  const byClass = {}
+  const order = []
+  for (const item of Object.values(byInstrument)) {
+    const cls = item.cls || 'outros'
+    if (!byClass[cls]) { byClass[cls] = []; order.push(cls) }
+    byClass[cls].push(item)
+  }
+
+  return order.map(cls => {
+    const items = byClass[cls]
+    const f = fluxoByClass[cls]
+    const fluxoHtml = f
+      ? `
+      <div class="class-fluxo">
+        <span class="fluxo-status ${f.status}" title="Positivo = apetite por risco entrando; Negativo = apetite por risco saindo; Neutro = sem direção clara">${FLUXO_LABELS[f.status] || f.status}</span>
+        <span class="fluxo-motivo">${escapeHtml(f.motivo)}</span>
+      </div>
+    `
+      : ''
+    return `
+      <div class="class-group">
+        <div class="pred-class-title">${ASSET_CLASS_LABELS[cls] || cls} (${items.length})</div>
+        ${fluxoHtml}
+        ${items.map((item) => renderPredictionInstrument(item, latestBySymbol, accuracyByInstrument, ontemByKey)).join('')}
+      </div>
+    `
+  }).join('')
 }
 
 function renderCenarios(cenarios) {
   if (!cenarios || cenarios.length === 0) return `<p class="muted">Cenários ainda não gerados hoje.</p>`
   const order = ['expansao', 'base', 'estresse']
   const sorted = [...cenarios].sort((a, b) => order.indexOf(a.tipo) - order.indexOf(b.tipo))
+
   return sorted
     .map(
       (c) => `
     <div class="cenario-block">
-      <span class="cenario-tipo ${c.tipo}">${CENARIO_LABELS[c.tipo] || c.tipo}</span>
+      <div class="cenario-top">
+        <span class="cenario-tipo ${c.tipo}">${CENARIO_LABELS[c.tipo] || c.tipo}</span>
+        ${c.probabilidade != null ? `<span class="cenario-prob">${Number(c.probabilidade).toFixed(0)}%</span>` : ''}
+      </div>
       <p class="cenario-condicao"><strong>Se:</strong> ${escapeHtml(c.condicao)}</p>
       <p class="cenario-efeito"><strong>Então:</strong> ${escapeHtml(c.efeito_esperado)}</p>
+      ${
+        (c.favorece && c.favorece.length > 0) || (c.pressiona && c.pressiona.length > 0)
+          ? `<div style="margin-top:0.4rem;display:flex;gap:1.5rem;flex-wrap:wrap">
+              ${
+                c.favorece && c.favorece.length > 0
+                  ? `<span style="font-size:0.78rem"><span class="muted">Favorece: </span>${c.favorece.map((a) => `<span class="tag" style="color:var(--risk-on-strong);background:rgba(63,214,126,0.15)">${escapeHtml(a)}</span>`).join('')}</span>`
+                  : ''
+              }
+              ${
+                c.pressiona && c.pressiona.length > 0
+                  ? `<span style="font-size:0.78rem"><span class="muted">Pressiona: </span>${c.pressiona.map((a) => `<span class="tag" style="color:var(--risk-off-strong);background:rgba(240,69,60,0.15)">${escapeHtml(a)}</span>`).join('')}</span>`
+                  : ''
+              }
+            </div>`
+          : ''
+      }
+      ${c.invalida_se ? `<p class="muted" style="font-size:0.75rem;margin-top:0.4rem"><strong>Invalida se:</strong> ${escapeHtml(c.invalida_se)}</p>` : ''}
     </div>
   `
     )
     .join('')
 }
 
-function renderFluxo(fluxos) {
-  if (!fluxos || fluxos.length === 0) return `<p class="muted">Fluxo por classe ainda não gerado hoje.</p>`
-  return fluxos
-    .map(
-      (f) => `
-    <div class="fluxo-row">
-      <div>
-        <div>${ASSET_CLASS_LABELS[f.asset_class] || f.asset_class}</div>
-        <div class="fluxo-motivo">${escapeHtml(f.motivo)}</div>
-      </div>
-      <span class="fluxo-status ${f.status}">${f.status}</span>
+function highlightPct(text) {
+  if (!text) return ''
+  return escapeHtml(text)
+    .replace(/([-+]?\d+[.,]?\d*%)/g, '<strong class="prose-highlight">$1</strong>')
+    .replace(/(\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b)/g, '<strong class="prose-highlight-date">$1</strong>')
+}
+
+function renderAnaliseKpi(conc, cenarios, cenariosOntem) {
+  const alertCount = Array.isArray(conc?.sinais_alerta) ? conc.sinais_alerta.length : 0
+  const withProb = (cenarios || []).filter((c) => c.probabilidade != null)
+  const topCenario = withProb.length > 0 ? [...withProb].sort((a, b) => Number(b.probabilidade) - Number(a.probabilidade))[0] : null
+
+  const crossAsset = Array.isArray(conc?.confirmacao_cross_asset) ? conc.confirmacao_cross_asset : []
+  const confirmam = crossAsset.filter((c) => c.status === 'confirma').length
+  const naoConfirmam = crossAsset.filter((c) => c.status === 'nao_confirma').length
+
+  if (!topCenario && alertCount === 0 && crossAsset.length === 0) return ''
+
+  // Painel de Convicção: compara a probabilidade do MESMO tipo de
+  // cenário (ex: Base) entre hoje e o dia anterior disponível — "50%
+  // hoje" sozinho diz menos que "caiu de 60% pra 50%".
+  let mudancaHtml = ''
+  if (topCenario && cenariosOntem && cenariosOntem.length > 0) {
+    const ontemMesmoTipo = cenariosOntem.find((c) => c.tipo === topCenario.tipo)
+    if (ontemMesmoTipo && ontemMesmoTipo.probabilidade != null) {
+      const delta = Number(topCenario.probabilidade) - Number(ontemMesmoTipo.probabilidade)
+      if (Math.abs(delta) >= 1) {
+        const seta = delta > 0 ? '↑' : '↓'
+        const cor = 'var(--accent)'
+        mudancaHtml = `<span style="color:${cor}" title="Era ${Number(ontemMesmoTipo.probabilidade).toFixed(0)}% no dia anterior">${seta} ${Math.abs(delta).toFixed(0)}pp vs. dia anterior</span>`
+      } else {
+        mudancaHtml = `<span class="muted">→ estável vs. dia anterior</span>`
+      }
+    }
+  }
+
+  // Resumo rápido de quantas classes confirmam a narrativa — leitura
+  // "sustentada por 5 de 7 classes" é diferente de "sustentada por 2".
+  let crossAssetHtml = ''
+  if (crossAsset.length > 0) {
+    const cor = naoConfirmam > confirmam ? 'var(--neutral)' : confirmam > 0 ? 'var(--accent)' : 'var(--text-faint)'
+    crossAssetHtml = `<span style="color:${cor}" title="${confirmam} confirmam, ${naoConfirmam} não confirmam, ${crossAsset.length - confirmam - naoConfirmam} neutras"><strong>${confirmam}/${crossAsset.length}</strong> classes confirmam</span>`
+  }
+
+  // Mostra os 3 cenários no resumo (não só o mais provável) — dá a
+  // visão completa da distribuição sem precisar rolar até a seção.
+  const order = ['expansao', 'base', 'estresse']
+  const cenariosSummaryHtml =
+    withProb.length > 0
+      ? `<span>${order
+          .map((tipo) => {
+            const c = withProb.find((x) => x.tipo === tipo)
+            if (!c) return ''
+            const isTop = topCenario && c.tipo === topCenario.tipo
+            return `<span style="${isTop ? 'font-weight:700' : 'color:var(--text-muted)'}">${CENARIO_LABELS[tipo]} ${Number(c.probabilidade).toFixed(0)}%</span>`
+          })
+          .filter(Boolean)
+          .join(' <span class="muted">·</span> ')}</span>`
+      : ''
+
+  return `
+    <div class="track-horizon-row" style="margin-bottom:1.5rem;padding-top:0;border-top:none;">
+      ${cenariosSummaryHtml}
+      ${mudancaHtml}
+      ${crossAssetHtml}
+      <span style="color:var(--neutral)"><strong>${alertCount}</strong> sinais de alerta hoje</span>
     </div>
   `
-    )
-    .join('')
 }
 
 function renderSynthesis(conc) {
@@ -1055,17 +1395,45 @@ function renderSynthesis(conc) {
 
   // Fallback pra dias gravados antes da reestruturação (só tinham "texto")
   if (!temEstruturado && conc.texto) {
-    const paragraphs = conc.texto.split('\n').filter(p => p.trim()).map(p => `<p>${escapeHtml(p)}</p>`).join('')
+    const paragraphs = conc.texto.split('\n').filter(p => p.trim()).map(p => `<p>${highlightPct(p)}</p>`).join('')
     return `<div class="prose">${paragraphs}</div>`
   }
+
+  // Quebra em parágrafos (a IA é instruída a separar com \n\n) — se por
+  // algum motivo vier tudo grudado, cai num parágrafo só, sem quebrar.
+  const asParagraphs = (text) =>
+    text
+      .split(/\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => `<p class="prose-p">${highlightPct(p)}</p>`)
+      .join('')
 
   const blocks = []
 
   if (conc.driver_do_dia) {
     blocks.push(`
       <div class="synth-block">
-        <div class="synth-label">Driver do dia</div>
-        <p class="prose-p">${escapeHtml(conc.driver_do_dia)}</p>
+        <div class="synth-label">🎯 O que mudou hoje</div>
+        ${asParagraphs(conc.driver_do_dia)}
+      </div>
+    `)
+  }
+
+  if (conc.drivers_ainda_ativos) {
+    blocks.push(`
+      <div class="synth-block">
+        <div class="synth-label" style="color:var(--text-muted)">📌 Ainda em jogo</div>
+        <p class="prose-p" style="color:var(--text-muted)">${highlightPct(conc.drivers_ainda_ativos)}</p>
+      </div>
+    `)
+  }
+
+  if (conc.correlacao_do_dia) {
+    blocks.push(`
+      <div class="synth-block">
+        <div class="synth-label">🔗 Correlação do dia</div>
+        <p class="prose-p">${highlightPct(conc.correlacao_do_dia)}</p>
       </div>
     `)
   }
@@ -1073,8 +1441,48 @@ function renderSynthesis(conc) {
   if (conc.narrativa_dominante) {
     blocks.push(`
       <div class="synth-block">
-        <div class="synth-label">Narrativa dominante</div>
-        <p class="prose-p">${escapeHtml(conc.narrativa_dominante)}</p>
+        <div class="synth-label">📖 Narrativa dominante</div>
+        ${asParagraphs(conc.narrativa_dominante)}
+      </div>
+    `)
+  }
+
+  if (conc.regime_condicional) {
+    blocks.push(`
+      <div class="synth-block">
+        <div class="synth-label">🎚 Regime pode mudar se</div>
+        <p class="prose-p">${highlightPct(conc.regime_condicional)}</p>
+      </div>
+    `)
+  }
+
+  if (conc.divergencia_sinais) {
+    blocks.push(`
+      <div class="synth-block">
+        <div class="synth-label">🧭 Divergência de sinais</div>
+        <p class="prose-p">${highlightPct(conc.divergencia_sinais)}</p>
+      </div>
+    `)
+  }
+
+  if (conc.confirmacao_cross_asset && conc.confirmacao_cross_asset.length > 0) {
+    const STATUS_ICON = { confirma: '✓', nao_confirma: '✗', neutro: '~' }
+    const STATUS_COLOR = { confirma: 'var(--risk-on-strong)', nao_confirma: 'var(--risk-off-strong)', neutro: 'var(--text-faint)' }
+    const CLASSE_LABELS = { juros: 'Juros', dolar: 'Dólar', credito: 'Crédito', equities: 'Ações', amplitude: 'Amplitude', vix: 'VIX', cripto: 'Cripto' }
+    blocks.push(`
+      <div class="synth-block">
+        <div class="synth-label">🧩 Confirmação cross-asset</div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem">
+          ${conc.confirmacao_cross_asset
+            .map(
+              (c) => `
+            <span title="${escapeHtml(c.nota)}" style="font-size:0.85rem;cursor:help">
+              ${escapeHtml(CLASSE_LABELS[c.classe] || c.classe)} <strong style="color:${STATUS_COLOR[c.status] || 'var(--text-faint)'}">${STATUS_ICON[c.status] || '?'}</strong>
+            </span>
+          `
+            )
+            .join('')}
+        </div>
       </div>
     `)
   }
@@ -1082,8 +1490,8 @@ function renderSynthesis(conc) {
   if (alertas.length > 0) {
     blocks.push(`
       <div class="synth-block alert">
-        <div class="synth-label">⚠ Sinais de alerta</div>
-        <ul class="synth-list">${alertas.map((a) => `<li>${escapeHtml(a)}</li>`).join('')}</ul>
+        <div class="synth-label">⚠ Sinais de alerta (${alertas.length})</div>
+        <ul class="synth-list">${alertas.map((a) => `<li>${highlightPct(a)}</li>`).join('')}</ul>
       </div>
     `)
   }
@@ -1091,8 +1499,8 @@ function renderSynthesis(conc) {
   if (precisa.length > 0) {
     blocks.push(`
       <div class="synth-block">
-        <div class="synth-label">O que o mercado precisa</div>
-        <ul class="synth-list">${precisa.map((p) => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+        <div class="synth-label">🧭 Próximos gatilhos</div>
+        <ul class="synth-list">${precisa.map((p) => `<li>${highlightPct(p)}</li>`).join('')}</ul>
       </div>
     `)
   }
@@ -1100,78 +1508,350 @@ function renderSynthesis(conc) {
   return blocks.join('') || `<p class="muted">Síntese ainda não gerada hoje.</p>`
 }
 
-async function renderInProgress(horizon, latestBySymbol) {
-  const el = document.getElementById(`progress-${horizon}`)
-  if (!el) return
+const MACRO_CHECKLIST = [
+  { label: 'CPI', pais: 'eua', keywords: ['cpi'], weight: 5, subtitle: 'Preços ao Consumidor', description: 'Mede a inflação ao consumidor nos EUA. Acima do esperado costuma ser hawkish (pressiona o Fed a manter/subir juros); abaixo costuma ser dovish (abre espaço pra corte).' },
+  { label: 'Decisão do Fed', pais: 'eua', keywords: ['fed', 'fomc'], contextKeywords: ['juro', 'taxa', 'decisão', 'decidiu', 'corte', 'alta', 'reunião', 'rate', 'powell', 'manteve', 'reduziu', 'elevou'], weight: 5, subtitle: 'Banco central americano', description: 'Decisão de juros do banco central americano. Alta de juros geralmente fortalece o dólar e pressiona ações/growth; corte tende ao oposto.' },
+  { label: 'Mercado de Trabalho', pais: 'eua', keywords: ['payroll', 'folha de pagamento', 'nfp', 'emprego', 'desemprego', 'jolts', 'unemployment'], weight: 5, subtitle: 'Payroll, desemprego, salários', description: 'Payroll, desemprego e salários mensais dos EUA. Emprego forte costuma ser hawkish (Fed mantém juros altos); enfraquecimento abre espaço pra corte.' },
+  { label: 'PCE', pais: 'eua', keywords: ['pce'], weight: 4, subtitle: 'Gastos de Consumo Pessoal', description: 'Medida de inflação preferida do Fed (mais completa que o CPI). Mesma lógica: acima é hawkish, abaixo é dovish.' },
+  { label: 'PIB', pais: 'eua', keywords: ['pib', 'gdp'], weight: 4, subtitle: 'Produto Interno Bruto', description: 'Crescimento econômico trimestral dos EUA. Acima do esperado é sinal de economia forte — bom pra ações, mas pode ser hawkish se vier junto de inflação alta.' },
+  { label: 'ISM/PMI', pais: 'eua', keywords: ['ism', 'pmi'], weight: 4, subtitle: 'Atividade industrial/serviços', description: 'Indicador antecedente de atividade (manufatura/serviços). Acima de 50 = expansão; abaixo de 50 = contração. Costuma antecipar o PIB.' },
+  { label: 'Vendas no Varejo', pais: 'eua', keywords: ['varejo', 'retail sales'], weight: 3, description: 'Termômetro do consumo americano. Forte = economia aquecida; fraco = sinal de desaceleração do consumidor.' },
+  { label: 'PPI', pais: 'eua', keywords: ['ppi'], weight: 2, subtitle: 'Preços ao Produtor', description: 'Inflação ao produtor (o que a empresa paga, antes de repassar pro consumidor). Costuma antecipar o CPI dos meses seguintes.' },
+  { label: 'Produtividade', pais: 'eua', keywords: ['produtividade', 'productivity'], weight: 2, subtitle: 'Produtividade do Trabalho', description: 'Mede quanto a economia produz por hora trabalhada. Relevante mas de importância secundária no dia a dia — CPI, Payroll e ISM têm mais peso pra decisão de investimento.' },
+  { label: 'CPI', pais: 'europa', keywords: ['cpi', 'hicp'], weight: 5, subtitle: 'Preços ao Consumidor (HICP)', description: 'Inflação ao consumidor da zona do euro (HICP). Mesma lógica do CPI americano: acima pressiona o BCE a manter juros altos.' },
+  { label: 'Decisão do BCE', pais: 'europa', keywords: ['bce', 'ecb'], contextKeywords: ['juro', 'taxa', 'decisão', 'decidiu', 'corte', 'alta', 'reunião', 'rate', 'lagarde', 'manteve', 'reduziu', 'elevou'], weight: 5, subtitle: 'Banco central europeu', description: 'Decisão de juros do banco central europeu. Afeta diretamente o euro e os juros da zona do euro.' },
+  { label: 'PIB', pais: 'europa', keywords: ['pib'], weight: 3, subtitle: 'Produto Interno Bruto', description: 'Crescimento econômico da zona do euro no trimestre.' },
+  { label: 'PMI', pais: 'europa', keywords: ['pmi'], weight: 4, subtitle: 'Atividade industrial/serviços', description: 'Indicador antecedente de atividade na Europa, mesma leitura do ISM americano — acima de 50 é expansão.' },
+  { label: 'IPCA', pais: 'brasil', keywords: ['ipca'], weight: 5, subtitle: 'Preços ao Consumidor Amplo', description: 'Inflação oficial do Brasil, usada pelo Copom pra decidir a Selic. Acima do esperado pressiona o Banco Central a manter juros altos.' },
+  { label: 'Copom', pais: 'brasil', keywords: ['copom', 'selic'], weight: 5, subtitle: 'Comitê de Política Monetária', description: 'Decisão de juros (Selic) do Banco Central do Brasil. Afeta diretamente renda fixa, câmbio e bolsa brasileira.' },
+  { label: 'PIB', pais: 'brasil', keywords: ['pib'], weight: 4, subtitle: 'Produto Interno Bruto', description: 'Crescimento econômico trimestral do Brasil.' },
+  { label: 'IBC-Br', pais: 'brasil', keywords: ['ibc-br', 'ibc br'], weight: 3, subtitle: 'Atividade Econômica (BC)', description: 'Termômetro mensal da atividade econômica brasileira — funciona como uma prévia do PIB, que só sai a cada trimestre.' },
+  { label: 'Desemprego', pais: 'brasil', keywords: ['desemprego', 'pnad'], weight: 3, subtitle: 'PNAD', description: 'Taxa de desemprego (PNAD). Queda sinaliza mercado de trabalho aquecido, o que pode pressionar salários e inflação.' },
+  { label: 'PMI', pais: 'china', keywords: ['pmi'], weight: 4, subtitle: 'Atividade industrial/serviços', description: 'Indicador antecedente de atividade industrial/serviços chinesa. Relevante pro Brasil pela ligação com preço de commodities.' },
+  { label: 'PIB', pais: 'china', keywords: ['pib', 'gdp'], weight: 4, subtitle: 'Produto Interno Bruto', description: 'Crescimento econômico chinês. Desaceleração costuma pesar sobre preço de commodities e moedas emergentes, incluindo o real.' },
+  { label: 'CPI', pais: 'china', keywords: ['cpi'], weight: 3, subtitle: 'Preços ao Consumidor', description: 'Inflação ao consumidor chinesa.' },
+  { label: 'CPI', pais: 'reino_unido', keywords: ['cpi'], weight: 3, subtitle: 'Preços ao Consumidor', description: 'Inflação ao consumidor do Reino Unido.' },
+  { label: 'PMI', pais: 'reino_unido', keywords: ['pmi'], weight: 3, subtitle: 'Atividade industrial/serviços', description: 'Indicador antecedente de atividade britânica, mesma leitura do ISM americano — acima de 50 é expansão.' },
+  { label: 'PIB', pais: 'reino_unido', keywords: ['pib', 'gdp'], weight: 3, subtitle: 'Produto Interno Bruto', description: 'Crescimento econômico trimestral do Reino Unido.' },
+]
 
-  const { data: allPreds } = await sb
-    .from('predictions')
-    .select('id, instrument_id, market_date, target_date, direction, magnitude_min_pct, magnitude_max_pct, confidence_pct, reference_price, instruments(symbol_internal,name)')
-    .eq('horizon', horizon)
-    .order('market_date', { ascending: false })
-    .limit(200)
-
-  if (!allPreds || allPreds.length === 0) {
-    el.innerHTML = `<p class="muted">Nenhum palpite de ${horizon === '1W' ? '1 semana' : '1 mês'} ainda.</p>`
-    return
+function matchesKeyword(name, keywords, contextKeywords) {
+  const lower = (name || '').toLowerCase()
+  const hasMain = keywords.some((k) => lower.includes(k))
+  if (!hasMain) return false
+  // Pra casos como "Fed"/"BCE" onde a palavra sozinha aparece em
+  // contexto que não tem nada a ver com decisão de juros (ex: notícia
+  // de fusão de banco mencionando "BCE" de passagem) — exige também
+  // uma palavra de contexto de política monetária.
+  if (contextKeywords && contextKeywords.length > 0) {
+    return contextKeywords.some((k) => lower.includes(k))
   }
+  return true
+}
 
-  const ids = allPreds.map((p) => p.id)
-  const { data: resolved } = await sb.from('prediction_resolutions').select('prediction_id').in('prediction_id', ids)
-  const resolvedIds = new Set((resolved || []).map((r) => r.prediction_id))
-  const pending = allPreds.filter((p) => !resolvedIds.has(p.id))
+function direcaoBolsaEmoji(dir) {
+  if (dir === 'sobe') return '📈'
+  if (dir === 'desce') return '📉'
+  if (dir === 'neutro') return '➡️'
+  return ''
+}
 
-  const latestByInstrument = {}
-  for (const p of pending) {
-    const key = p.instrument_id
-    if (!latestByInstrument[key] || p.market_date > latestByInstrument[key].market_date) latestByInstrument[key] = p
-  }
+function vsConsensusColor(vs) {
+  if (vs === 'acima') return 'var(--risk-on-strong)'
+  if (vs === 'abaixo') return 'var(--risk-off-strong)'
+  if (vs === 'sem_consenso') return 'var(--accent)'
+  return 'var(--text-faint)'
+}
+function vsConsensusBg(vs) {
+  if (vs === 'acima') return 'rgba(63,214,126,0.15)'
+  if (vs === 'abaixo') return 'rgba(240,69,60,0.15)'
+  if (vs === 'sem_consenso') return 'rgba(79,184,174,0.15)'
+  return 'var(--surface-2)'
+}
 
-  const items = Object.values(latestByInstrument).sort((a, b) => Number(b.confidence_pct) - Number(a.confidence_pct))
+// Um card por dado real: cor mostra se veio acima/abaixo/em linha
+// (não é bom/ruim automaticamente — isso varia por indicador, é
+// exatamente o que o "detalhe" abaixo explica).
+function renderMacroDadoCard(m, linkedNews) {
+  const vsLabel = VS_CONSENSUS_LABELS[m.vs_consensus] || m.vs_consensus || '?'
+  const newsHtml =
+    linkedNews && linkedNews.length > 0
+      ? `<details class="pred-details" style="margin-top:0.3rem"><summary>notícias (${linkedNews.length})</summary>${linkedNews
+          .map((n) => `<p><strong>${escapeHtml(n.headline)}:</strong> ${escapeHtml(n.summary || '')}</p>`)
+          .join('')}</details>`
+      : ''
+  return `
+    <div style="margin-bottom:0.4rem">
+      <p style="font-size:0.75rem">
+        <span class="muted">Atual: </span>${escapeHtml(m.result || '')}${m.consensus ? ` · consenso: ${escapeHtml(m.consensus)}` : ''}
+        <span class="tag" style="color:${vsConsensusColor(m.vs_consensus)};background:${vsConsensusBg(m.vs_consensus)};margin-left:0.3rem">${vsLabel}</span>
+      </p>
+      <p class="muted" style="font-size:0.66rem;margin-top:0.1rem">divulgado em ${m.release_date ? fmtShortDate(m.release_date) : 'data incerta'}</p>
+      <p style="font-size:0.72rem;margin-top:0.2rem"><span class="muted">Anterior: </span>${m.anterior ? escapeHtml(m.anterior) : '<span class="muted">—</span>'}</p>
+      ${m.impact ? `<details class="pred-details" style="margin-top:0.2rem"><summary>o que isso significa</summary><p>${escapeHtml(m.impact)}</p></details>` : ''}
+      ${newsHtml}
+    </div>
+  `
+}
 
-  if (items.length === 0) {
-    el.innerHTML = `<p class="muted">Nenhum palpite pendente de ${horizon === '1W' ? '1 semana' : '1 mês'}.</p>`
-    return
-  }
+// Estado bruto guardado aqui pra os filtros (data/importância) poderem
+// recalcular só a grade, sem precisar buscar tudo de novo no banco.
+let macroChecklistData = { macro: [], radarMacro: [] }
+let selectedMarketDate = null
 
-  el.innerHTML = items
-    .map((p) => {
-      const sym = p.instruments?.symbol_internal || '?'
-      const name = p.instruments?.name || ''
-      const current = latestBySymbol[sym]?.close
+function macroImportanceScore(text) {
+  const lower = (text || '').toLowerCase()
+  if (/\b(cpi|ipca|pce|fed|fomc|copom|bce|ecb|payroll|nfp|emprego|desemprego|jolts)\b/.test(lower)) return 3
+  if (/\b(pib|gdp|varejo|retail|pmi|industrial)\b/.test(lower)) return 2
+  return 1
+}
 
-      if (current == null || p.reference_price == null) {
-        return `<div class="progress-row"><span class="progress-symbol">${escapeHtml(sym)}</span><span class="muted">sem dado atual</span></div>`
+function guessCountryFromText(text) {
+  const lower = (text || '').toLowerCase()
+  if (lower.includes('brasil') || lower.includes('brazil')) return 'brasil'
+  if (lower.includes('eua') || lower.includes('estados unidos') || lower.includes('united states')) return 'eua'
+  if (lower.includes('europa') || lower.includes('zona do euro') || lower.includes('eurozone') || lower.includes('euro area')) return 'europa'
+  if (lower.includes('china') || lower.includes('chinesa') || lower.includes('chinês')) return 'china'
+  if (lower.includes('reino unido') || lower.includes('united kingdom') || lower.includes(' uk ') || lower.includes('britânic') || lower.includes('british')) return 'reino_unido'
+  return null
+}
+
+// O prompt do collect-macro-data pede "últimos 5-7 dias" toda noite —
+// o mesmo dado real (ex: CPI de julho) pode ser recapturado várias
+// noites seguidas, com o número dito de formas diferentes (ordem,
+// nível de detalhe) e, às vezes, com a data levemente errada de uma
+// captura pra outra. Agrupa por resultado da comparação (acima/
+// abaixo/em linha) + data DENTRO de uma janela de 5 dias uma da
+// outra + pelo menos 1 palavra significativa em comum no nome do
+// indicador (evita juntar "Payroll" com "Desemprego" só porque os
+// dois vieram "abaixo" e caem na mesma categoria "Mercado de
+// Trabalho") — mantém a versão com mais detalhe (texto mais longo),
+// descarta o resto. Devolve do mais recente pro mais antigo.
+function significantWords(text) {
+  const stopwords = new Set(['de', 'do', 'da', 'em', 'no', 'na', 'o', 'a', 'e', 'dos', 'das', 'com', 'para', 'por'])
+  return new Set(
+    (text || '')
+      .toLowerCase()
+      .replace(/[()]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !stopwords.has(w) && !/^\d+$/.test(w))
+  )
+}
+function dedupeByResult(items) {
+  const sorted = [...items].sort((a, b) => (a.release_date || '9999-99-99').localeCompare(b.release_date || '9999-99-99'))
+  const groups = []
+  for (const m of sorted) {
+    const mWords = significantWords(m.indicator_name)
+    const group = groups.find((g) => {
+      const last = g[g.length - 1]
+      if ((last.vs_consensus || '') !== (m.vs_consensus || '')) return false
+      if (!last.release_date || !m.release_date) {
+        if (!(!last.release_date && !m.release_date)) return false
+      } else {
+        const diffDays = Math.abs((new Date(m.release_date + 'T12:00:00') - new Date(last.release_date + 'T12:00:00')) / (1000 * 60 * 60 * 24))
+        if (diffDays > 5) return false
       }
-
-      const actualPct = ((current - p.reference_price) / p.reference_price) * 100
-      const absActual = Math.abs(actualPct)
-      const hasMag = p.magnitude_min_pct != null && p.magnitude_max_pct != null
-      const absHi = hasMag ? Math.max(Math.abs(p.magnitude_min_pct), Math.abs(p.magnitude_max_pct)) : null
-
-      const onTrack =
-        p.direction === 'lateral' ? absActual <= (absHi ?? Infinity) : p.direction === 'alta' ? actualPct > 0 : actualPct < 0
-
-      const progressPct = absHi ? Math.min(100, (absActual / absHi) * 100) : null
-      const dirClass = directionClass(p.direction)
-      const barClass = p.direction === 'lateral' ? 'misto' : p.direction === 'alta' ? 'positivo' : 'negativo'
-
-      return `
-      <div class="progress-row">
-        <div class="progress-top">
-          <span class="progress-symbol">${escapeHtml(sym)}<span class="pred-name">${escapeHtml(name)}</span></span>
-          <span class="progress-status ${onTrack ? 'ok' : 'off'}">${onTrack ? 'no caminho' : 'fora do previsto'}</span>
-        </div>
-        <div class="progress-detail">
-          previsto <span class="pred-dir ${dirClass}">${directionArrow(p.direction)}</span>
-          ${hasMag ? `${p.magnitude_min_pct}% a ${p.magnitude_max_pct}%` : ''} (conv. ${p.confidence_pct}%) · até ${fmtDate(p.target_date)}
-        </div>
-        <div class="progress-detail">hoje: ${actualPct > 0 ? '+' : ''}${actualPct.toFixed(2)}% desde ${fmtDate(p.market_date)}</div>
-        ${progressPct != null ? `<div class="driver-bar-track"><div class="driver-bar-fill ${barClass}" style="width:${progressPct}%"></div></div>` : ''}
-      </div>
-    `
+      const lastWords = significantWords(last.indicator_name)
+      return [...mWords].some((w) => lastWords.has(w))
     })
-    .join('')
+    if (group) group.push(m)
+    else groups.push([m])
+  }
+  return groups
+    .map((g) => g.reduce((best, cur) => ((cur.result || '').length > (best.result || '').length ? cur : best)))
+    .sort((a, b) => (b.release_date || '').localeCompare(a.release_date || ''))
+}
+
+function newsMatchedChecklistItem(n) {
+  return MACRO_CHECKLIST.find((ci) => {
+    const paisOk = !n.pais || n.pais === ci.pais
+    return paisOk && matchesKeyword(n.headline + ' ' + (n.summary || ''), ci.keywords, ci.contextKeywords)
+  })
+}
+
+function updateMacroChecklistGrid() {
+  const grid = document.getElementById('macro-checklist-grid')
+  if (!grid) return
+
+  const today = todayBRTClient()
+  const { macro, radarMacro } = macroChecklistData
+  const matchedMacroIds = new Set()
+
+  // Próximas divulgações — os 5 mais próximos do Radar de tema macro,
+  // só data + o quê + bandeira, resumo compacto do "Próximo" que já
+  // aparece espalhado em cada card individual.
+  const proximosEl = document.getElementById('macro-proximos-list')
+  if (proximosEl) {
+    const proximos = (radarMacro || [])
+      .filter((r) => r.expected_date && r.expected_date >= today)
+      .sort((a, b) => a.expected_date.localeCompare(b.expected_date))
+      .slice(0, 5)
+    proximosEl.innerHTML =
+      proximos.length > 0
+        ? proximos
+            .map(
+              (r) => `
+        <div class="item" style="padding:0.5rem 0.75rem;">
+          <span class="when">${fmtDate(r.expected_date)}</span>
+          <p class="headline" style="font-size:0.82rem">${PAIS_FLAGS[r.pais] || ''} ${escapeHtml(r.description)}</p>
+        </div>
+      `
+            )
+            .join('')
+        : `<p class="muted">Nada previsto no momento.</p>`
+  }
+
+  // KPI = todo dado real resolvido — os 12 fixos sempre aparecem (com
+  // dado ou "sem dado ainda"), mais qualquer dado real fora dos 12
+  // ("não catalogado"). Nada de notícia/radar aqui — só número real.
+  const checklistCards = MACRO_CHECKLIST.map((ci) => {
+    const allMatches = macro.filter((m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords))
+    allMatches.forEach((m) => matchedMacroIds.add(m.indicator_name + '|' + m.release_date))
+    const realized = dedupeByResult(allMatches)
+
+    // "Próximo" é calculado sempre — faz sentido tanto quando já tem
+    // dado (próxima divulgação do período seguinte) quanto quando não
+    // tem nenhum ainda. Ignora Radar com data já vencida (senão fica
+    // mostrando "próximo" uma data que já passou) — pega sempre a
+    // data futura mais próxima, ou incerta se não tiver data nenhuma.
+    const pendingMatch = radarMacro
+      .filter((r) => (r.pais || guessCountryFromText(r.description)) === ci.pais && matchesKeyword(r.description, ci.keywords, ci.contextKeywords))
+      .filter((r) => !r.expected_date || r.expected_date >= today)
+      .sort((a, b) => (a.expected_date || '9999-99-99').localeCompare(b.expected_date || '9999-99-99'))[0]
+    const proximoHtml = `<p style="font-size:0.72rem;margin-top:0.2rem"><span class="muted">Próximo: </span>${
+      pendingMatch
+        ? `<span style="color:var(--neutral)">${pendingMatch.expected_date ? fmtShortDate(pendingMatch.expected_date) : 'data incerta'}</span>`
+        : '<span class="muted">—</span>'
+    }</p>`
+
+    let bodyHtml
+    if (realized.length > 0) {
+      bodyHtml = renderMacroDadoCard(realized[0], null) + proximoHtml
+    } else {
+      // Sem dado real ainda — mostra os 3 campos mesmo assim (Atual e
+      // Último em branco), e sempre mostra "o que significa" (fixo,
+      // escrito por mim), pra já entender o indicador antes do
+      // primeiro dado chegar.
+      const descHtml = ci.description
+        ? `<details class="pred-details" style="margin-top:0.3rem"><summary>o que significa</summary><p>${escapeHtml(ci.description)}</p></details>`
+        : ''
+      bodyHtml = `
+        <p style="font-size:0.75rem"><span class="muted">Atual: </span><span class="muted">—</span></p>
+        <p style="font-size:0.72rem;margin-top:0.15rem"><span class="muted">Anterior: </span><span class="muted">—</span></p>
+        ${proximoHtml}
+        ${descHtml}
+      `
+    }
+
+    const direcaoEmoji = realized.length > 0 ? direcaoBolsaEmoji(realized[0].direcao_bolsa) : ''
+
+    return {
+      score: ci.weight,
+      pais: ci.pais,
+      hasData: realized.length > 0,
+      vsConsensus: realized.length > 0 ? realized[0].vs_consensus : null,
+      direcaoBolsa: realized.length > 0 ? realized[0].direcao_bolsa : null,
+      html: `
+        <div class="theme-card">
+          <div class="theme-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>${PAIS_FLAGS[ci.pais] || ''} ${ci.label}</span>
+            ${direcaoEmoji ? `<span title="Tendência esperada pra bolsa">${direcaoEmoji}</span>` : ''}
+          </div>
+          ${ci.subtitle ? `<div class="muted" style="font-size:0.62rem;margin-top:-0.3rem">${escapeHtml(ci.subtitle)}</div>` : ''}
+          <div style="margin-top:0.4rem">${bodyHtml}</div>
+        </div>
+      `,
+    }
+  })
+
+  // Dado real fora dos 12 — agrupa por tópico (nome varia entre
+  // coletas: "PPI de julho" e "PPI dos EUA (julho)" são o mesmo
+  // evento) antes de deduplicar dentro do grupo.
+  function extractTopicKey(text) {
+    const stopwords = new Set(['dos', 'do', 'da', 'de', 'em', 'no', 'na', 'o', 'a', 'e', 'eua', 'brasil', 'europa', 'estados', 'unidos', 'zona', 'euro'])
+    const cleaned = (text || '').toLowerCase().replace(/[()]/g, ' ')
+    const words = cleaned.split(/\s+/).filter((w) => w && !stopwords.has(w) && !/^\d+$/.test(w))
+    return words[0] || cleaned.trim()
+  }
+
+  const uncataloguedRaw = macro.filter((m) => !matchedMacroIds.has(m.indicator_name + '|' + m.release_date))
+  const groupedUncat = {}
+  const groupOrder = []
+  for (const m of uncataloguedRaw) {
+    const paisResolved = m.pais || guessCountryFromText(m.indicator_name)
+    const key = (paisResolved || 'x') + '|' + extractTopicKey(m.indicator_name)
+    if (!groupedUncat[key]) {
+      groupedUncat[key] = { items: [], label: m.indicator_name, pais: paisResolved }
+      groupOrder.push(key)
+    }
+    groupedUncat[key].items.push(m)
+    if (m.indicator_name.length < groupedUncat[key].label.length) groupedUncat[key].label = m.indicator_name
+  }
+
+  const uncataloguedCards = groupOrder.map((key) => {
+    const g = groupedUncat[key]
+    const paisTag = g.pais ? `${PAIS_FLAGS[g.pais] || ''} ` : ''
+    const deduped = dedupeByResult(g.items)
+    return {
+      score: macroImportanceScore(g.label),
+      pais: g.pais,
+      hasData: true,
+      vsConsensus: deduped[0]?.vs_consensus || null,
+      direcaoBolsa: deduped[0]?.direcao_bolsa || null,
+      html: `
+        <div class="theme-card">
+          <div class="theme-card-title">${paisTag}${escapeHtml(g.label)}${!g.pais ? ' · não classificado' : ''} <span class="type-badge type-expired" style="margin-left:0.3rem">NÃO CATALOGADO</span></div>
+          <div style="margin-top:0.4rem">${renderMacroDadoCard(deduped[0], null)}</div>
+        </div>
+      `,
+    }
+  })
+
+  // Agrupa por país primeiro (mais fácil de escanear), importância só
+  // decide a ordem dentro de cada país — não catalogados sem país vão
+  // pro final.
+  const PAIS_ORDER = ['brasil', 'eua', 'europa', 'china', 'reino_unido']
+  const allCards = [...checklistCards, ...uncataloguedCards].sort((a, b) => {
+    const pa = PAIS_ORDER.indexOf(a.pais)
+    const pb = PAIS_ORDER.indexOf(b.pais)
+    const ia = pa === -1 ? PAIS_ORDER.length : pa
+    const ib = pb === -1 ? PAIS_ORDER.length : pb
+    if (ia !== ib) return ia - ib
+    return b.score - a.score
+  })
+  grid.innerHTML = allCards.map((c) => c.html).join('')
+
+  const totalEl = document.getElementById('kpi-total-count')
+  if (totalEl) totalEl.textContent = allCards.length
+
+  const aguardandoEl = document.getElementById('kpi-aguardando-count')
+  if (aguardandoEl) aguardandoEl.textContent = checklistCards.filter((c) => !c.hasData).length
+
+  // Conta a partir do MESMO conjunto de cards exibidos (não da lista
+  // bruta do banco) — assim monitorados = aguardando + soma destes 4.
+  const vsCounts = { acima: 0, abaixo: 0, em_linha: 0, sem_consenso: 0 }
+  for (const c of allCards) {
+    if (c.vsConsensus && vsCounts[c.vsConsensus] != null) vsCounts[c.vsConsensus]++
+  }
+  const acimaEl = document.getElementById('kpi-acima-count')
+  if (acimaEl) acimaEl.textContent = vsCounts.acima
+  const abaixoEl = document.getElementById('kpi-abaixo-count')
+  if (abaixoEl) abaixoEl.textContent = vsCounts.abaixo
+  const emLinhaEl = document.getElementById('kpi-emlinha-count')
+  if (emLinhaEl) emLinhaEl.textContent = vsCounts.em_linha
+  const semConsensoEl = document.getElementById('kpi-semconsenso-count')
+  if (semConsensoEl) semConsensoEl.textContent = vsCounts.sem_consenso
+
+  const direcaoCounts = { sobe: 0, desce: 0, neutro: 0 }
+  for (const c of allCards) {
+    if (c.direcaoBolsa && direcaoCounts[c.direcaoBolsa] != null) direcaoCounts[c.direcaoBolsa]++
+  }
+  const sobeEl = document.getElementById('kpi-sobe-count')
+  if (sobeEl) sobeEl.textContent = `📈 ${direcaoCounts.sobe}`
+  const desceEl = document.getElementById('kpi-desce-count')
+  if (desceEl) desceEl.textContent = `📉 ${direcaoCounts.desce}`
+  const neutroEl = document.getElementById('kpi-neutro-count')
+  if (neutroEl) neutroEl.textContent = `➡️ ${direcaoCounts.neutro}`
 }
 
 async function renderCalendar() {
@@ -1181,94 +1861,183 @@ async function renderCalendar() {
   const [{ data: macro }, { data: radarMacro }] = await Promise.all([
     sb
       .from('macro_dados')
-      .select('release_date,indicator_name,result,consensus,vs_consensus,impact')
-      .order('release_date', { ascending: false })
-      .limit(15),
+      .select('release_date,indicator_name,result,consensus,anterior,vs_consensus,impact,pais,direcao_bolsa')
+      .order('release_date', { ascending: false, nullsFirst: false })
+      .limit(50),
     sb
       .from('radar_eventos')
-      .select('expected_date,expected_time,description,importance,impact_note')
+      .select('expected_date,expected_time,description,importance,impact_note,pais,market_date')
       .eq('theme', 'macro')
-      .order('expected_date', { ascending: false })
-      .limit(15),
+      .order('expected_date', { ascending: false, nullsFirst: false })
+      .limit(50),
   ])
 
-  const items = []
-  for (const m of macro || []) {
-    items.push({
-      date: m.release_date,
-      time: null,
-      isPast: true,
-      title: m.indicator_name,
-      detail: `${m.result ?? ''}${m.consensus ? ' · consenso: ' + m.consensus : ''}`,
-      tag: VS_CONSENSUS_LABELS[m.vs_consensus] || m.vs_consensus,
-      note: m.impact,
-    })
-  }
-  for (const r of radarMacro || []) {
-    items.push({
-      date: r.expected_date,
-      time: r.expected_time,
-      isPast: false,
-      title: r.description,
-      detail: '',
-      tag: r.importance,
-      note: r.impact_note,
-    })
-  }
-
-  if (items.length === 0) {
-    el.innerHTML = `<p class="muted">Nenhum dado no calendário ainda.</p>`
-    return
-  }
-
-  items.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-
-  el.innerHTML = items
-    .map((it) => {
-      const stateClass = it.isPast ? 'cal-past' : 'cal-future'
-      const whenText = it.date ? `${fmtDate(it.date)}${it.time ? ' · ' + escapeHtml(it.time) : ''}` : 'data incerta'
-      return `
-    <div class="item ${stateClass}">
-      <span class="tag ${it.isPast ? 'cal-tag-past' : 'cal-tag-future'}">${it.isPast ? '✓' : '○'} ${escapeHtml(it.tag || '')}</span>
-      <span class="when">${whenText}</span>
-      <p class="headline">${escapeHtml(it.title)}</p>
-      ${it.detail ? `<p class="summary">${escapeHtml(it.detail)}</p>` : ''}
-      ${it.note ? `<p class="calendar-impact">${it.isPast ? '📊' : '🔮'} ${escapeHtml(it.note)}</p>` : ''}
+  const kpiHtml = `
+    <div class="class-group">
+      <div style="background:var(--surface-2);border-radius:10px;padding:1rem 1.25rem;">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-total-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text)">–</div>
+            <div class="muted" style="font-size:0.7rem">monitorados</div>
+          </div>
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-aguardando-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--neutral)">–</div>
+            <div class="muted" style="font-size:0.7rem">aguardando dado</div>
+          </div>
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-acima-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-on-strong)">–</div>
+            <div class="muted" style="font-size:0.7rem">acima do consenso</div>
+          </div>
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-abaixo-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">–</div>
+            <div class="muted" style="font-size:0.7rem">abaixo</div>
+          </div>
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-emlinha-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text-faint)">–</div>
+            <div class="muted" style="font-size:0.7rem">em linha</div>
+          </div>
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-semconsenso-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--accent)">–</div>
+            <div class="muted" style="font-size:0.7rem">sem consenso</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;padding-top:0.75rem;border-top:1px dashed var(--border);">
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-sobe-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;">📈 –</div>
+            <div class="muted" style="font-size:0.7rem">tendem a subir</div>
+          </div>
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-desce-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;">📉 –</div>
+            <div class="muted" style="font-size:0.7rem">tendem a cair</div>
+          </div>
+          <div style="flex:1;text-align:center;min-width:80px;">
+            <div id="kpi-neutro-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;">➡️ –</div>
+            <div class="muted" style="font-size:0.7rem">neutros</div>
+          </div>
+        </div>
+      </div>
     </div>
   `
-    })
-    .join('')
+
+  // Guarda o dado bruto pra função de importância poder recalcular sem
+  // buscar tudo de novo.
+  macroChecklistData = { macro: macro || [], radarMacro: radarMacro || [] }
+
+  const checklistHtml = `
+    <div class="class-group">
+      <div class="pred-class-title">Próximas divulgações</div>
+      <div id="macro-proximos-list"><p class="muted">carregando…</p></div>
+    </div>
+    <div class="class-group">
+      <div id="macro-checklist-grid" class="theme-trends-grid"></div>
+    </div>
+  `
+
+  el.innerHTML = kpiHtml + checklistHtml
+
+  updateMacroChecklistGrid()
 }
 
-async function renderConfig() {
+async function renderConfig(marketDate) {
   const el = document.getElementById('config-panel')
   if (!el) return
 
-  const [{ data: config }, { data: thresholds }] = await Promise.all([
+  const [
+    { data: config },
+    { data: thresholds },
+    { count: totalInstruments },
+    { data: marketToday },
+    { data: macroRecent },
+    { count: newsCount },
+    { count: radarCount },
+    { data: fgToday },
+    { count: driversCount },
+    { data: cenariosToday },
+  ] = await Promise.all([
     sb.from('config').select('key, description, value').order('key'),
     sb.from('resolution_thresholds').select('asset_class, horizon, alta_min_pct, baixa_max_pct').order('asset_class').order('horizon'),
+    sb.from('instruments').select('*', { count: 'exact', head: true }),
+    sb.from('market_data').select('instrument_id').eq('market_date', marketDate),
+    sb.from('macro_dados').select('indicator_name,pais,release_date').order('release_date', { ascending: false, nullsFirst: false }).limit(50),
+    sb.from('events').select('*', { count: 'exact', head: true }).eq('market_date', marketDate),
+    sb.from('radar_eventos').select('*', { count: 'exact', head: true }).eq('market_date', marketDate),
+    sb.from('fear_greed').select('market_date').eq('market_date', marketDate),
+    sb.from('drivers').select('*', { count: 'exact', head: true }).eq('market_date', marketDate),
+    sb.from('cenarios').select('probabilidade').eq('market_date', marketDate),
   ])
+
+  // Modelos e fontes — informação que já existia solta dentro de
+  // "fixo no código", mas merece destaque próprio (transparência de
+  // onde vem cada camada do sistema).
+  const modelos = [
+    { key: 'Síntese, análise, cenários e palpites', value: 'Claude Sonnet 5 (effort alto)' },
+    { key: 'Notícias, Radar e Macro', value: 'Perplexity Sonar Pro' },
+  ]
+  const fontes = [
+    { key: 'Preço de mercado', value: 'Yahoo Finance' },
+    { key: 'Yields / juros', value: 'FRED' },
+    { key: 'Fear & Greed', value: 'CNN' },
+    { key: 'Notícias, Radar e Macro', value: 'Perplexity (busca web)' },
+    { key: 'Banco de dados', value: 'Supabase' },
+  ]
 
   // Parâmetros que AINDA vivem só no código das Edge Functions — não são
   // consultados do banco (não dá pra buscar isso ao vivo), então essa
   // lista é fixa aqui e precisa ser atualizada manualmente se o código
   // mudar. Só existe pra você lembrar que eles existem e pedir ajuste.
+  // Escondida por padrão — é detalhe de implementação, não o que mais
+  // importa bater o olho primeiro.
   const codeLocked = [
-    { key: 'Modelo de síntese (generate-synthesis, weekly/monthly)', value: 'claude-sonnet-5, effort alto' },
     { key: 'Nº de cenários gerados', value: 'sempre 3 (expansão/base/estresse)' },
     { key: 'Nº de vereditos gerados', value: 'sempre 3 (brasil/eua/europa)' },
     { key: 'Nº de drivers (barra de influência)', value: 'entre 4 e 8' },
-    { key: 'Modelo de notícias/radar/macro', value: 'sonar-pro (Perplexity)' },
     { key: 'Retry Claude API', value: 'até 3 tentativas, espera 3s/6s' },
     { key: 'Retry Perplexity API', value: 'até 3 tentativas, espera 5s/10s' },
     { key: 'Horários do cron (11 jobs)', value: '22h00 às 22h27 BRT, seg-sex' },
   ]
 
-  let html = `
+  // Qualidade dos dados do dia — a diferença entre "o modelo está
+  // pessimista" e "o modelo está pessimista porque faltou 30% do
+  // input" é enorme, e antes não dava pra saber olhando a tela.
+  const marketDataCount = new Set((marketToday || []).map((m) => m.instrument_id)).size
+  const macroMatched = MACRO_CHECKLIST.filter((ci) =>
+    (macroRecent || []).some((m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords))
+  ).length
+  const cenariosCount = (cenariosToday || []).length
+  const cenariosSum = (cenariosToday || []).reduce((s, c) => s + Number(c.probabilidade || 0), 0)
+  const fgOk = fgToday && fgToday.length > 0
+
+  const qualStatus = (ok) => (ok ? '✅' : '⚠')
+  const qualidadeHtml = `
+    <div class="config-group">
+      <div class="class-title">📊 Qualidade dos dados — ${fmtDate(marketDate)}</div>
+      <div class="config-row"><span class="config-key">Preço de mercado</span><span class="config-value">${marketDataCount}${totalInstruments ? '/' + totalInstruments : ''} ativos ${qualStatus(totalInstruments ? marketDataCount >= totalInstruments : marketDataCount > 0)}</span></div>
+      <div class="config-row"><span class="config-key">Macro</span><span class="config-value">${macroMatched}/${MACRO_CHECKLIST.length} categorias com dado ${qualStatus(macroMatched === MACRO_CHECKLIST.length)}</span></div>
+      <div class="config-row"><span class="config-key">Notícias coletadas</span><span class="config-value">${newsCount ?? 0} ${qualStatus((newsCount ?? 0) > 0)}</span></div>
+      <div class="config-row"><span class="config-key">Radar coletado</span><span class="config-value">${radarCount ?? 0} eventos ${qualStatus((radarCount ?? 0) > 0)}</span></div>
+      <div class="config-row"><span class="config-key">Fear &amp; Greed</span><span class="config-value">${fgOk ? 'atualizado ✅' : 'não atualizado ⚠'}</span></div>
+      <div class="config-row"><span class="config-key">Drivers gerados</span><span class="config-value">${driversCount ?? 0} ${qualStatus((driversCount ?? 0) > 0)}</span></div>
+      <div class="config-row"><span class="config-key">Cenários</span><span class="config-value">${cenariosCount}/3 ${qualStatus(cenariosCount === 3 && cenariosSum >= 85 && cenariosSum <= 115)}${cenariosCount === 3 ? ` · soma ${cenariosSum.toFixed(0)}%` : ''}</span></div>
+    </div>
+  `
+
+  let html = qualidadeHtml + `
     <p class="muted" style="margin-bottom:1rem">
-      🟢 abaixo = já editável (UPDATE direto na tabela) · 🔴 = ainda fixo no código, precisa pedir ajuste
+      🟢 abaixo = já editável (UPDATE direto na tabela) · 🔒 = ainda fixo no código, precisa pedir ajuste
     </p>
   `
+
+  html += `<div class="config-group"><div class="class-title">🤖 Modelos</div>`
+  html += modelos
+    .map((c) => `<div class="config-row"><span class="config-key">${escapeHtml(c.key)}</span><span class="config-value muted-value">${escapeHtml(c.value)}</span></div>`)
+    .join('')
+  html += `</div>`
+
+  html += `<div class="config-group"><div class="class-title">📡 Fontes de dado</div>`
+  html += fontes
+    .map((c) => `<div class="config-row"><span class="config-key">${escapeHtml(c.key)}</span><span class="config-value muted-value">${escapeHtml(c.value)}</span></div>`)
+    .join('')
+  html += `</div>`
 
   if (config && config.length > 0) {
     html += `<div class="config-group"><div class="class-title">🟢 Regime (compute-regime)</div>`
@@ -1291,41 +2060,163 @@ async function renderConfig() {
   if (thresholds && thresholds.length > 0) {
     html += `<div class="config-group"><div class="class-title">🟢 Thresholds de resolução (resolve-predictions)</div>`
     html += thresholds
-      .map(
-        (t) => `
-      <div class="config-row">
+      .map((t) => {
+        const baixa = Number(t.baixa_max_pct)
+        const alta = Number(t.alta_min_pct)
+        return `
+      <div class="config-row" style="align-items:flex-start">
         <span class="config-key">${escapeHtml(t.asset_class)} · ${escapeHtml(t.horizon)}</span>
-        <span class="config-value">${t.baixa_max_pct}% a +${t.alta_min_pct}%</span>
+        <div style="text-align:right;font-size:0.78rem">
+          <div>Baixa: ≤ ${baixa}%</div>
+          <div class="muted">Lateral: ${baixa}% a +${alta}%</div>
+          <div>Alta: ≥ +${alta}%</div>
+        </div>
       </div>
     `
-      )
+      })
       .join('')
     html += `</div>`
   }
 
-  html += `<div class="config-group"><div class="class-title">🔴 Ainda fixo no código</div>`
-  html += codeLocked
+  html += `
+    <details class="pred-details" style="margin-top:0.5rem">
+      <summary>▸ configurações avançadas (fixas no código)</summary>
+      <div class="config-group" style="margin-top:0.5rem">
+        ${codeLocked
+          .map((c) => `<div class="config-row"><span class="config-key">${escapeHtml(c.key)}</span><span class="config-value muted-value">${escapeHtml(c.value)}</span></div>`)
+          .join('')}
+      </div>
+    </details>
+  `
+
+  el.innerHTML = html
+}
+
+async function renderFearGreedDetail() {
+  const el = document.getElementById('fg-detail')
+  if (!el) return
+
+  const { data: historyDesc } = await sb
+    .from('fear_greed')
+    .select('id, market_date, index_value, label, fear_greed_components(component, value, label)')
+    .order('market_date', { ascending: false })
+    .limit(30)
+  const history = (historyDesc || []).slice().reverse()
+
+  if (!history || history.length === 0) {
+    el.innerHTML = `<p class="muted">Nenhum dado de Fear &amp; Greed ainda.</p>`
+    return
+  }
+
+  const latest = history[history.length - 1]
+
+  // Gráfico de tendência — só ocupa espaço quando existe de verdade
+  // (a partir de 3 dias de histórico); antes disso vira 1 linha discreta
+  // junto do resto do texto explicativo, no rodapé.
+  let chartHtml = ''
+  let notEnoughNote = ''
+  if (history.length < 3) {
+    notEnoughNote = `Gráfico de tendência aparece com mais dias acumulados (hoje: ${history.length} dia${history.length === 1 ? '' : 's'} de histórico).`
+  } else {
+    const bars = history
+      .map((h) => {
+        const val = Number(h.index_value)
+        const heightPct = Math.max(4, val)
+        const color = val >= 55 ? 'var(--risk-on-strong)' : val <= 45 ? 'var(--risk-off-strong)' : 'var(--text-faint)'
+        const d = new Date(h.market_date + 'T12:00:00')
+        const shortDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+        return `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+          <span style="font-family:var(--font-mono);font-size:0.62rem;font-weight:700;color:${color};margin-bottom:3px;">${val.toFixed(0)}</span>
+          <div style="width:60%;height:${heightPct}%;background:${color};border-radius:2px 2px 0 0;" title="${fmtDate(h.market_date)}: ${val.toFixed(0)}"></div>
+        </div>
+      `
+      })
+      .join('')
+    const dateLabels = history
+      .map((h) => {
+        const d = new Date(h.market_date + 'T12:00:00')
+        return `<span style="flex:1;text-align:center">${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</span>`
+      })
+      .join('')
+    chartHtml = `
+      <div style="position:relative;height:70px;margin-top:1rem;">
+        <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--border);"></div>
+        <div style="display:flex;align-items:flex-end;height:100%;gap:3px;position:relative;">${bars}</div>
+      </div>
+      <div style="display:flex;font-size:0.6rem;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:0.5rem;gap:3px;">${dateLabels}</div>
+    `
+  }
+
+  const components = latest.fear_greed_components || []
+
+  // Item 5: F&G 65 com todo mundo em ~65 é bem diferente de F&G 65
+  // com metade em 95 e metade em 30 — a média sozinha esconde isso.
+  let divergenceHtml = ''
+  const compValues = components.map((c) => Number(c.value)).filter((v) => !isNaN(v))
+  if (compValues.length >= 2) {
+    const maxV = Math.max(...compValues)
+    const minV = Math.min(...compValues)
+    const spread = maxV - minV
+    const aggregateSide = Number(latest.index_value) >= 50 ? 'greed' : 'fear'
+    const aligned = components.filter((c) => {
+      const v = Number(c.value)
+      if (isNaN(v)) return false
+      return (v >= 50 ? 'greed' : 'fear') === aggregateSide
+    }).length
+    if (spread >= 40) {
+      divergenceHtml = `<p style="font-size:0.78rem;color:var(--neutral);margin-top:0.6rem">⚠ Dispersão alta entre componentes (${minV.toFixed(0)} a ${maxV.toFixed(0)}) — só ${aligned}/${components.length} concordam com o agregado. O número consolidado pode estar escondendo sinais contraditórios.</p>`
+    } else if (aligned === components.length) {
+      divergenceHtml = `<p style="font-size:0.78rem;color:var(--text-faint);margin-top:0.6rem">Sinais alinhados: ${aligned}/${components.length} componentes concordam com o agregado.</p>`
+    }
+  }
+
+  const aggregateItem = `
+    <div class="fg-detail-row fg-detail-aggregate">
+      <div class="fg-detail-name">Agregado</div>
+      <div style="text-align:right">
+        <div class="fg-detail-value">${Number(latest.index_value).toFixed(0)}</div>
+        <div class="fg-detail-label" style="color:${fgLabelColor(latest.label)}">${latest.label}</div>
+      </div>
+    </div>
+  `
+
+  const componentItems = components
     .map(
       (c) => `
-    <div class="config-row">
-      <span class="config-key">${escapeHtml(c.key)}</span>
-      <span class="config-value muted-value">${escapeHtml(c.value)}</span>
+    <div class="fg-detail-row">
+      <div>
+        <div class="fg-detail-name">${FG_COMPONENT_LABELS[c.component] || c.component}</div>
+        <div class="fg-detail-desc">${FG_COMPONENT_DESC[c.component] || ''}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="fg-detail-value">${Number(c.value).toFixed(0)}</div>
+        <div class="fg-detail-label" style="color:${fgLabelColor(c.label)}">${c.label || ''}</div>
+      </div>
     </div>
   `
     )
     .join('')
-  html += `</div>`
 
-  el.innerHTML = html
+  el.innerHTML = `
+    <div class="fg-detail-grid">${aggregateItem}${componentItems}</div>
+    ${chartHtml}
+    ${divergenceHtml}
+    <p class="muted" style="font-size:0.72rem;margin-top:0.75rem">Índice agregado (0-100): 0 = medo extremo, 100 = ganância extrema. Cada sub-indicador entra com peso igual pra formar o número final.${notEnoughNote ? ' ' + notEnoughNote : ''}</p>
+  `
 }
 
 async function renderTrackRecord() {
   const { data, error } = await sb
     .from('prediction_resolutions')
-    .select('direction_correct, direction_actual, predictions(confidence_pct)')
+    .select(
+      'direction_correct, direction_actual, actual_return_pct, predictions(confidence_pct, horizon, target_date, instrument_id, magnitude_min_pct, magnitude_max_pct, direction, instruments(asset_class))'
+    )
   const el = document.getElementById('track-record')
+  const summaryEl = document.getElementById('track-record-summary')
   if (error || !data || data.length === 0) {
     el.innerHTML = `<p class="muted">Ainda sem histórico de acurácia — o primeiro resultado aparece assim que os palpites de hoje forem resolvidos, comparando com o fechamento do dia seguinte.</p>`
+    if (summaryEl) summaryEl.innerHTML = `<p class="muted" style="font-size:0.8rem">Track record: ainda sem histórico.</p>`
     return
   }
   const total = data.length
@@ -1333,6 +2224,48 @@ async function renderTrackRecord() {
   const pct = ((acertos / total) * 100).toFixed(0)
   const lateralCount = data.filter((r) => r.direction_actual === 'lateral').length
   const baselinePct = ((lateralCount / total) * 100).toFixed(0)
+
+  // Rollup dos últimos 7 dias — o acumulado desde o início pode
+  // esconder uma piora/melhora recente. Usa target_date (data que o
+  // palpite valia), não a data em que foi resolvido.
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10)
+  const last7 = data.filter((r) => r.predictions?.target_date && r.predictions.target_date >= sevenDaysAgoStr)
+  const last7Acertos = last7.filter((r) => r.direction_correct).length
+  const last7Errados = last7.length - last7Acertos
+  const rollupHtml =
+    last7.length > 0
+      ? `
+    <div class="track-horizon-row" style="margin-top:0.4rem">
+      <span class="muted">últimos 7 dias:</span>
+      <span style="color:var(--risk-on-strong)">✅ ${last7Acertos}</span>
+      <span style="color:var(--risk-off-strong)">❌ ${last7Errados}</span>
+      <span class="muted">(${((last7Acertos / last7.length) * 100).toFixed(0)}%)</span>
+    </div>
+  `
+      : ''
+
+  // Quebra por horizonte — o agregado pode esconder diferenças reais
+  // (ex: 1D costuma acertar mais que 1M, que tem muito mais tempo pra
+  // dar errado).
+  const byHorizon = ['1D', '1W', '1M']
+    .map((h) => {
+      const rows = data.filter((r) => r.predictions?.horizon === h)
+      if (rows.length === 0) return null
+      const hAcertos = rows.filter((r) => r.direction_correct).length
+      return { h, pct: ((hAcertos / rows.length) * 100).toFixed(0), acertos: hAcertos, total: rows.length }
+    })
+    .filter(Boolean)
+
+  const byHorizonHtml =
+    byHorizon.length > 0
+      ? `
+    <div class="track-horizon-row">
+      ${byHorizon.map((x) => `<span><strong>${HORIZON_LETTER[x.h]}</strong> ${x.pct}% <span class="muted">(${x.acertos}/${x.total})</span></span>`).join('')}
+    </div>
+  `
+      : ''
 
   // Gap de calibração: convicção média declarada vs. acerto real. Se a
   // convicção média bate perto do acerto real, o sistema está calibrado
@@ -1356,154 +2289,725 @@ async function renderTrackRecord() {
   `
       : ''
 
+  // Item 3: acerto por classe de ativo — o agregado esconde se o
+  // sistema é bom em índice e ruim em cripto, por exemplo.
+  const byClass = {}
+  for (const r of data) {
+    const cls = r.predictions?.instruments?.asset_class
+    if (!cls) continue
+    if (!byClass[cls]) byClass[cls] = { correct: 0, total: 0 }
+    byClass[cls].total++
+    if (r.direction_correct) byClass[cls].correct++
+  }
+  const byClassHtml =
+    Object.keys(byClass).length > 0
+      ? `
+    <div style="margin-top:0.6rem">
+      <p class="muted" style="margin-bottom:0.3rem">Acerto por classe:</p>
+      <div class="track-horizon-row" style="margin-top:0;padding-top:0;border-top:none;flex-wrap:wrap">
+        ${Object.entries(byClass)
+          .sort((a, b) => b[1].total - a[1].total)
+          .map(([cls, v]) => `<span>${ASSET_CLASS_LABELS[cls] || cls} <strong>${((v.correct / v.total) * 100).toFixed(0)}%</strong> <span class="muted">(${v.correct}/${v.total})</span></span>`)
+          .join('')}
+      </div>
+    </div>
+  `
+      : ''
+
+  // Item 4: acerto de magnitude (faixa), separado de direção — bater a
+  // direção com +0,03% numa previsão de +3% a +5% não devia contar
+  // como "faixa" batida.
+  const withMag = data.filter((r) => r.actual_return_pct != null && r.predictions?.magnitude_min_pct != null && r.predictions?.magnitude_max_pct != null)
+  let faixaCorreta = 0
+  let erroMagnitudeSoma = 0
+  let erroMagnitudeCount = 0
+  for (const r of withMag) {
+    const absRet = Math.abs(Number(r.actual_return_pct))
+    const absMin = Math.min(Math.abs(r.predictions.magnitude_min_pct), Math.abs(r.predictions.magnitude_max_pct))
+    const absMax = Math.max(Math.abs(r.predictions.magnitude_min_pct), Math.abs(r.predictions.magnitude_max_pct))
+    const ok = r.direction_correct && (r.predictions.direction === 'lateral' ? absRet <= absMax : absRet >= absMin && absRet <= absMax)
+    if (ok) faixaCorreta++
+    else {
+      const erro = absRet < absMin ? absMin - absRet : absRet - absMax
+      erroMagnitudeSoma += erro
+      erroMagnitudeCount++
+    }
+  }
+  const faixaHtml =
+    withMag.length > 0
+      ? `<p class="muted" style="margin-top:0.5rem">Acerto de direção: <strong style="color:var(--text)">${pct}%</strong> · Acerto de faixa: <strong style="color:var(--text)">${((faixaCorreta / withMag.length) * 100).toFixed(0)}%</strong> (${faixaCorreta}/${withMag.length})${erroMagnitudeCount > 0 ? ` · erro médio quando fora da faixa: ${(erroMagnitudeSoma / erroMagnitudeCount).toFixed(1)}pp` : ''}</p>`
+      : ''
+
+  // Item 5: calibração por faixa de convicção, quebrado por horizonte —
+  // D acumula rápido, S e M levam semanas/meses pra ter amostra real.
+  // Mostra sempre, mas avisa quando a amostra ainda é pequena.
+  const CONF_BUCKETS = [
+    [40, 50],
+    [50, 60],
+    [60, 70],
+    [70, 101],
+  ]
+  const calibByHorizonHtml = ['1D', '1W', '1M']
+    .map((h) => {
+      const rows = data.filter((r) => r.predictions?.horizon === h && r.predictions?.confidence_pct != null)
+      if (rows.length === 0) return null
+      const buckets = CONF_BUCKETS.map(([lo, hi]) => {
+        const inBucket = rows.filter((r) => Number(r.predictions.confidence_pct) >= lo && Number(r.predictions.confidence_pct) < hi)
+        if (inBucket.length === 0) return null
+        const bAcertos = inBucket.filter((r) => r.direction_correct).length
+        return { lo, hi: hi === 101 ? '+' : hi, pct: ((bAcertos / inBucket.length) * 100).toFixed(0), n: inBucket.length }
+      }).filter(Boolean)
+      if (buckets.length === 0) return null
+      return `
+        <div style="margin-top:0.3rem">
+          <span class="muted" style="font-size:0.78rem">${HORIZON_LETTER[h]}:</span>
+          ${buckets.map((b) => `<span style="font-size:0.78rem;margin-left:0.6rem">${b.lo}-${b.hi === '+' ? '100' : b.hi}%${b.hi === '+' ? '+' : ''} → <strong>${b.pct}%</strong> <span class="muted">(n=${b.n}${b.n < 20 ? ', amostra pequena' : ''})</span></span>`).join('')}
+        </div>
+      `
+    })
+    .filter(Boolean)
+    .join('')
+  const calibByHorizonSection =
+    calibByHorizonHtml.length > 0
+      ? `
+    <div style="margin-top:0.6rem">
+      <p class="muted" style="margin-bottom:0.2rem">Calibração por convicção declarada (acerto real por faixa):</p>
+      ${calibByHorizonHtml}
+      <p class="muted" style="font-size:0.72rem;margin-top:0.3rem">D acumula rápido (resolve todo dia); S leva semanas e M leva meses pra ter amostra confiável — trate os números de S/M com cautela até n≥20.</p>
+    </div>
+  `
+      : ''
+
+  // Item 6: baseline "momentum simples" — e se a gente só chutasse que
+  // a direção anterior se repete? SÓ pra 1D — em 1W/1M, 2 previsões
+  // consecutivas (por target_date) podem ter sido EMITIDAS antes do
+  // resultado uma da outra ficar conhecido (o alvo de 7/30 dias atrás
+  // ainda não tinha vencido quando a previsão seguinte foi feita) —
+  // isso inflaria o baseline de forma artificial (look-ahead).
+  const byInstHorizon = {}
+  for (const r of data) {
+    if (r.predictions?.horizon !== '1D') continue
+    if (!r.predictions?.instrument_id || !r.predictions?.target_date) continue
+    const key = r.predictions.instrument_id
+    if (!byInstHorizon[key]) byInstHorizon[key] = []
+    byInstHorizon[key].push(r)
+  }
+  let momentumCorrect = 0
+  let momentumTotal = 0
+  for (const key in byInstHorizon) {
+    const rows = byInstHorizon[key].sort((a, b) => a.predictions.target_date.localeCompare(b.predictions.target_date))
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i].direction_actual == null || rows[i - 1].direction_actual == null) continue
+      momentumTotal++
+      if (rows[i].direction_actual === rows[i - 1].direction_actual) momentumCorrect++
+    }
+  }
+  const momentumHtml =
+    momentumTotal > 0
+      ? `<p class="muted" style="margin-top:0.3rem">Baseline "momentum simples" — só 1D (repete a direção do dia anterior do mesmo ativo): ${((momentumCorrect / momentumTotal) * 100).toFixed(0)}% (n=${momentumTotal})</p>`
+      : ''
+
+  // Resumo compacto pro topo da aba — o mesmo dado, só resumido numa
+  // linha, pra quem entra na aba querendo ver "o que ele está
+  // prevendo agora" e não o histórico completo primeiro.
+  if (summaryEl) {
+    const horizonSummary = byHorizon.map((x) => `${HORIZON_LETTER[x.h]} ${x.pct}%`).join(' · ')
+    summaryEl.innerHTML = `<p style="font-size:0.85rem;margin:0"><strong>Track record:</strong> ${pct}% geral${horizonSummary ? ` · ${horizonSummary}` : ''} · n=${total} <span class="muted">— detalhe completo no final da página</span></p>`
+  }
+
   el.innerHTML = `
     <div class="stat-big">${pct}%</div>
     <p class="muted">${acertos} de ${total} palpites resolvidos, acerto de direção</p>
+    ${byHorizonHtml}
+    ${rollupHtml}
+    ${faixaHtml}
+    ${byClassHtml}
     <p class="muted" style="margin-top:0.5rem">Baseline "sempre lateral": ${baselinePct}%</p>
+    ${momentumHtml}
     ${calibrationHtml}
+    ${calibByHorizonSection}
+    <details class="pred-details" style="margin-top:0.75rem">
+      <summary>o que cada número significa</summary>
+      <p><strong>${pct}%:</strong> de todos os palpites já resolvidos (todos os ativos e horizontes juntos), quantos acertaram a direção (alta/baixa/lateral). É o sistema inteiro, não um ativo específico.</p>
+      <p><strong>Acerto de faixa:</strong> além de acertar a direção, o movimento real caiu dentro da magnitude prevista (ex: previu +2% a +4% e o real foi +3%)? Bater a direção sozinha é mais fácil que bater a faixa também.</p>
+      <p><strong>Acerto por classe:</strong> quebra o acerto de direção por tipo de ativo — o sistema pode ser bom em índices e ruim em cripto, por exemplo, e o número agregado esconde isso.</p>
+      <p><strong>Baseline "sempre lateral":</strong> se o sistema chutasse "lateral" pra tudo, sem inteligência nenhuma, acertaria essa % só por acaso. Serve pra saber se a IA está sendo útil de verdade, ou só um pouco melhor que não fazer nada.</p>
+      <p><strong>Baseline "momentum simples":</strong> se o sistema só repetisse a última direção observada do mesmo ativo, sem nenhuma análise nova, acertaria essa %. Outra régua pra saber se a IA está agregando valor de verdade.</p>
+      <p><strong>Convicção média declarada vs. gap:</strong> quanto a IA diz confiar, em média, comparado com o quanto ela realmente acerta. Gap negativo = mais modesta do que deveria (sub-confiante); gap positivo = mais confiante do que deveria (excesso de confiança).</p>
+      <p><strong>Convicção quando acertou vs. errou:</strong> se a convicção é mais alta nos acertos que nos erros, é sinal de boa calibração — a IA "sabe" quando está mais segura, mesmo que a taxa de acerto geral ainda seja baixa.</p>
+      <p><strong>Calibração por faixa de convicção:</strong> quando a IA diz estar 70%+ confiante, ela realmente acerta mais que quando diz 40-49%? Se sim, a convicção declarada é informação útil. Se não, ela não significa nada — e isso é importante saber.</p>
+    </details>
   `
 }
 
-async function renderTraceability() {
-  const el = document.getElementById('traceability')
+// A resolução pode vir como objeto solto ou lista, dependendo de como o
+// Supabase detecta a relação (é 1-pra-1, então pode variar) — trata os
+// dois formatos pra não depender de qual exatamente ele devolve.
+function getResFromPrediction(p) {
+  const r = p.prediction_resolutions
+  if (!r) return null
+  return Array.isArray(r) ? r[0] ?? null : r
+}
+
+// Desenha 1 linha de horizonte (D/S/M) com status ✅❌/progresso — usada
+// tanto em Rastreabilidade (Histórico) quanto no "rastreabilidade"
+// expansível de cada ativo em Palpites (Hoje), pra não duplicar lógica.
+function renderHorizonTraceRow(p, marketDate, latestBySymbol) {
+  if (!p) return ''
+  const res = getResFromPrediction(p)
+
+  if (res) {
+    const ret = res.actual_return_pct != null ? `${Number(res.actual_return_pct) > 0 ? '+' : ''}${Number(res.actual_return_pct).toFixed(2)}%` : ''
+    // Faixa julgada separado da direção — bater a direção com pouca
+    // magnitude (ex: +0,03% numa previsão de +3% a +5%) não devia
+    // contar como "faixa" batida, só como "direção" batida.
+    let faixaHtml = ''
+    if (res.actual_return_pct != null && p.magnitude_min_pct != null && p.magnitude_max_pct != null) {
+      const absRet = Math.abs(Number(res.actual_return_pct))
+      const absMin = Math.min(Math.abs(p.magnitude_min_pct), Math.abs(p.magnitude_max_pct))
+      const absMax = Math.max(Math.abs(p.magnitude_min_pct), Math.abs(p.magnitude_max_pct))
+      const faixaOk = res.direction_correct && (p.direction === 'lateral' ? absRet <= absMax : absRet >= absMin && absRet <= absMax)
+      faixaHtml = `<span class="${faixaOk ? 'ok' : 'off'}">Faixa ${faixaOk ? '✅' : '❌'}</span>`
+    }
+    return `
+      <div class="trace-h-block">
+        <div class="trace-h-mini">
+          <span class="${res.direction_correct ? 'ok' : 'off'}">Direção ${res.direction_correct ? '✅' : '❌'}</span>
+          ${faixaHtml}
+          <span class="muted">real: ${ret}</span>
+        </div>
+        <div class="trace-h-line muted">${fmtPrice(p.reference_price)} → ${fmtPrice(res.actual_close)}</div>
+      </div>
+    `
+  }
+
+  // Prazo já venceu mas o pipeline ainda não julgou oficialmente — não
+  // finge que está "acompanhando", isso é falha/atraso de resolução,
+  // não tracking normal.
+  const today = todayBRTClient()
+  if (p.target_date && p.target_date < today) {
+    return `
+      <div class="trace-h-block">
+        <span class="trace-h-status pending">resolução pendente</span>
+        <div class="trace-h-line muted">prazo (${fmtDate(p.target_date)}) já passou, aguardando o pipeline resolver</div>
+      </div>
+    `
+  }
+
+  // Ainda não julgado — mesma lógica de progresso que "Semana/Mês em
+  // Andamento" já usava, comparando com o preço atual.
+  const latestData = latestBySymbol?.[p.instruments?.symbol_internal]
+  const current = latestData?.close
+  // Se o dado mais recente não é mais novo que o dia em que o palpite foi
+  // emitido, ainda não houve fechamento novo pra medir nada — não dá pra
+  // julgar "acertando/errando" comparando o preço com ele mesmo.
+  const hasNewerData = latestData?.market_date && latestData.market_date > marketDate
+
+  let detailLine = `<div class="trace-h-line muted">sem dado atual pra medir progresso</div>`
+  let progressBar = ''
+  let miniHtml = `<span class="trace-h-status pending">não julgado</span>`
+
+  if (!hasNewerData) {
+    miniHtml = `<span class="trace-h-status pending">aguardando fechamento</span>`
+    detailLine = `<div class="trace-h-line muted">ainda sem fechamento novo desde ${fmtDate(marketDate)} · estava: ${fmtPrice(p.reference_price)}</div>`
+  } else if (current != null && p.reference_price != null) {
+    const actualPct = ((current - p.reference_price) / p.reference_price) * 100
+    const absActual = Math.abs(actualPct)
+    const hasMag = p.magnitude_min_pct != null && p.magnitude_max_pct != null
+    const absMin = hasMag ? Math.min(Math.abs(p.magnitude_min_pct), Math.abs(p.magnitude_max_pct)) : null
+    const absMax = hasMag ? Math.max(Math.abs(p.magnitude_min_pct), Math.abs(p.magnitude_max_pct)) : null
+    const dirOk = p.direction === 'lateral' ? absActual <= (absMax ?? Infinity) : p.direction === 'alta' ? actualPct > 0 : actualPct < 0
+
+    // Faixa em progresso (ainda não resolvido): abaixo do alvo ainda,
+    // dentro da faixa, ou já além dela — só faz sentido pra alta/baixa,
+    // pra lateral a própria direção já cobre isso.
+    let faixaHtml = ''
+    if (hasMag && p.direction !== 'lateral') {
+      if (!dirOk) faixaHtml = `<span class="off">Faixa ❌</span>`
+      else if (absActual < absMin) faixaHtml = `<span class="pending">Faixa ⏳</span>`
+      else if (absActual <= absMax) faixaHtml = `<span class="ok">Faixa ✅</span>`
+      else faixaHtml = `<span class="pending">Faixa ⚠</span>`
+    }
+
+    const progressPct = absMax ? Math.min(100, (absActual / absMax) * 100) : null
+    const barClass = p.direction === 'lateral' ? 'misto' : p.direction === 'alta' ? 'positivo' : 'negativo'
+
+    miniHtml = `<span class="${dirOk ? 'ok' : 'off'}">Direção ${dirOk ? '✅' : '❌'}</span>${faixaHtml}`
+    const sinceLabel = p.horizon === '1D' ? 'hoje' : 'até agora'
+    detailLine = `<div class="trace-h-line muted">${sinceLabel}: ${actualPct > 0 ? '+' : ''}${actualPct.toFixed(2)}% · estava: ${fmtPrice(p.reference_price)}</div>`
+    progressBar = progressPct != null ? `<div class="driver-bar-track"><div class="driver-bar-fill ${barClass}" style="width:${progressPct}%"></div></div>` : ''
+  }
+
+  return `
+    <div class="trace-h-block">
+      <div class="trace-h-mini">${miniHtml}</div>
+      ${detailLine}
+      ${progressBar}
+    </div>
+  `
+}
+
+// Preenche o "rastreabilidade" expansível de cada ativo em Palpites
+// (aba Hoje) — mesma consulta e mesma renderização por linha que
+// Rastreabilidade (Histórico) já usa, só que espalhada nos containers
+// de cada bloco de ativo em vez de numa lista única.
+async function renderPalpitesRastreabilidade(marketDate, latestBySymbol) {
+  const { data } = await sb
+    .from('predictions')
+    .select(
+      'horizon, direction, magnitude_min_pct, magnitude_max_pct, confidence_pct, reference_price, target_date, instruments(symbol_internal), prediction_resolutions(direction_correct, actual_return_pct, actual_close)'
+    )
+    .in('horizon', ['1D', '1W', '1M'])
+    .eq('market_date', marketDate)
+
+  if (!data) return
+
+  const byInstrument = {}
+  for (const p of data) {
+    const sym = p.instruments?.symbol_internal
+    if (!sym) continue
+    if (!byInstrument[sym]) byInstrument[sym] = {}
+    byInstrument[sym][p.horizon] = p
+  }
+
+  for (const [sym, byHorizon] of Object.entries(byInstrument)) {
+    for (const h of ['1D', '1W', '1M']) {
+      const el = document.getElementById(`rast-${sym}-${h}`)
+      if (!el) continue
+      el.innerHTML = renderHorizonTraceRow(byHorizon[h], marketDate, latestBySymbol)
+    }
+  }
+}
+
+const PAIS_LABELS = {
+  eua: 'EUA', europa: 'Europa', brasil: 'Brasil', china: 'China', reino_unido: 'Reino Unido', asia: 'Ásia',
+  oriente_medio: 'Oriente Médio', africa: 'África', america_latina: 'América Latina',
+  global: 'Global', outros: 'Não classificado',
+}
+const PAIS_FLAGS = {
+  eua: '🇺🇸', europa: '🇪🇺', brasil: '🇧🇷', china: '🇨🇳', reino_unido: '🇬🇧',
+  asia: '🌏', oriente_medio: '🌍', africa: '🌍', america_latina: '🌎', global: '🌐',
+}
+function impactColor(impact) {
+  if (impact === 'positivo' || impact === 'risk_on') return 'var(--risk-on-strong)'
+  if (impact === 'negativo' || impact === 'risk_off') return 'var(--risk-off-strong)'
+  return 'var(--text-faint)'
+}
+function impactBg(impact) {
+  if (impact === 'positivo' || impact === 'risk_on') return 'rgba(63,214,126,0.15)'
+  if (impact === 'negativo' || impact === 'risk_off') return 'rgba(240,69,60,0.15)'
+  return 'var(--surface-2)'
+}
+const IMPACT_LABELS = { risk_on: 'Risk-On', risk_off: 'Risk-Off', neutro: 'Neutro', misto: 'Misto', positivo: 'Positivo', negativo: 'Negativo' }
+
+// Notícias (passado) + Radar (futuro), fundidos numa timeline só,
+// agrupada por tema — os dois falam da mesma coisa (o que está
+// acontecendo lá fora), só em direções de tempo diferentes. Tema
+// "macro" já não chega aqui — mora inteiro em Dados.
+function importanceColor(imp) {
+  if (imp === 'alta') return 'var(--risk-off-strong)'
+  if (imp === 'media') return 'var(--neutral)'
+  return 'var(--text-faint)'
+}
+function importanceBg(imp) {
+  if (imp === 'alta') return 'rgba(240,69,60,0.15)'
+  if (imp === 'media') return 'rgba(232,176,75,0.15)'
+  return 'var(--surface-2)'
+}
+
+let noticiasRadarRawData = { events: [], radar: [] }
+
+function renderNoticiasRadar(events, radar, kpiHasDataMap) {
+  const today = todayBRTClient()
+  const items = []
+
+  for (const e of events || []) {
+    const matched = e.theme === 'macro' ? newsMatchedChecklistItem(e) : null
+    const matchedHasData = matched && kpiHasDataMap ? !!kpiHasDataMap[matched.label + '|' + matched.pais] : false
+    const assets = (e.event_instruments || []).map((ei) => ei.instruments?.symbol_internal).filter(Boolean)
+    items.push({
+      type: 'noticia',
+      typeLabel: 'NOTÍCIA',
+      tema: e.theme,
+      sortKey: e.market_date || '',
+      whenHtml: e.market_date ? fmtDate(e.market_date) : '',
+      title: e.headline,
+      detail: e.summary,
+      porQueImporta: e.por_que_importa,
+      newsImportance: e.importance,
+      assets,
+      tag: e.impact_direction,
+      tagColor: impactColor(e.impact_direction),
+      tagBg: impactBg(e.impact_direction),
+      source: e.source_name,
+      matchedLabel: matched ? matched.label : null,
+      matchedHasData,
+    })
+  }
+  for (const r of radar || []) {
+    // Não fecha ciclo (isso é trabalho do Palpites/Rastreabilidade, não
+    // do Radar) — mas continua visível, só marcado (e esmaecido), pra
+    // dar pra monitorar enquanto o sistema é novo.
+    const expired = r.expected_date && r.expected_date < today
+    const whenHtml =
+      `${fmtDate(r.market_date)}` +
+      (r.expected_date
+        ? ` · <span style="color:var(--neutral)">${fmtDate(r.expected_date)}${r.expected_time ? ' · ' + escapeHtml(r.expected_time) : ''}</span>`
+        : ' · <span style="color:var(--neutral)">data do evento incerta</span>')
+    items.push({
+      type: 'radar',
+      typeLabel: 'RADAR',
+      expired,
+      tema: r.theme,
+      sortKey: r.market_date || '',
+      whenHtml,
+      title: r.description,
+      detail: r.impact_note,
+      tag: r.importance,
+      tagColor: importanceColor(r.importance),
+      tagBg: importanceBg(r.importance),
+    })
+  }
+
+  if (items.length === 0) return `<p class="muted">Nada registrado ainda.</p>`
+
+  // KPI rápido: 2 fileiras — Notícias (total, risk-on, risk-off, alto
+  // impacto) e Radar (total pendente, alta importância) — separados,
+  // não misturados numa linha só.
+  let totalNoticias = 0
+  let riskOn = 0
+  let riskOff = 0
+  let altoImpactoNoticia = 0
+  let totalRadarPendente = 0
+  let altaImportanciaRadar = 0
+  for (const it of items) {
+    if (it.type === 'noticia') {
+      totalNoticias++
+      if (it.tag === 'risk_on' || it.tag === 'positivo') riskOn++
+      if (it.tag === 'risk_off' || it.tag === 'negativo') riskOff++
+      if (it.newsImportance === 'alta') altoImpactoNoticia++
+    }
+    if (it.type === 'radar' && !it.expired) {
+      totalRadarPendente++
+      if (it.tag === 'alta') altaImportanciaRadar++
+    }
+  }
+  const kpiHtml = `
+    <div style="background:var(--surface-2);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <div style="flex:1;text-align:center;min-width:80px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text)">${totalNoticias}</div>
+          <div class="muted" style="font-size:0.7rem">notícias</div>
+        </div>
+        <div style="flex:1;text-align:center;min-width:80px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-on-strong)">${riskOn}</div>
+          <div class="muted" style="font-size:0.7rem">risk-on</div>
+        </div>
+        <div style="flex:1;text-align:center;min-width:80px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">${riskOff}</div>
+          <div class="muted" style="font-size:0.7rem">risk-off</div>
+        </div>
+        <div style="flex:1;text-align:center;min-width:80px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">${altoImpactoNoticia}</div>
+          <div class="muted" style="font-size:0.7rem">alto impacto</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;padding-top:0.75rem;border-top:1px dashed var(--border);">
+        <div style="flex:1;text-align:center;min-width:80px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--neutral)">${totalRadarPendente}</div>
+          <div class="muted" style="font-size:0.7rem">no radar</div>
+        </div>
+        <div style="flex:1;text-align:center;min-width:80px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">${altaImportanciaRadar}</div>
+          <div class="muted" style="font-size:0.7rem">alta importância</div>
+        </div>
+      </div>
+    </div>
+  `
+
+  // Sem subdivisão por tema — 1 lista só, mais recente publicada
+  // primeiro, com uma flag mostrando o tema em vez de agrupar.
+  items.sort((a, b) => (b.sortKey || '').localeCompare(a.sortKey || ''))
+
+  return kpiHtml + items.map(renderNoticiaRadarItem).join('')
+}
+
+function renderNoticiaRadarItem(it) {
+  // B: tipo+tema fundidos num badge só, em vez de 2 separados.
+  const typeTemaClass = it.type === 'radar' ? 'type-radar' : 'type-noticia'
+  const typeTemaLabel = `${it.typeLabel} · ${THEME_LABELS[it.tema] || it.tema || ''}`
+
+  // C: ordem fixa — tipo+tema, depois status (vencida/KPI), depois
+  // importância/sentimento por último.
+  const statusBadge =
+    it.type === 'radar'
+      ? it.expired
+        ? `<span class="type-badge type-vencida" title="Data já passou, sem confirmação de resultado ainda">VENCIDA</span>`
+        : ''
+      : it.matchedLabel
+      ? `<span class="type-badge" style="color:${it.matchedHasData ? 'var(--risk-on-strong)' : 'var(--risk-off-strong)'};background:${it.matchedHasData ? 'rgba(63,214,126,0.15)' : 'rgba(240,69,60,0.15)'}" title="${it.matchedHasData ? 'KPI já tem dado real confirmado' : 'KPI ainda sem dado real confirmado'}">KPI · ${escapeHtml(it.matchedLabel)}</span>`
+      : ''
+
+  // D: item vencido fica com o card inteiro esmaecido, não só o selo.
+  const assetsHtml =
+    it.assets && it.assets.length > 0
+      ? `<div style="margin-top:0.3rem">${it.assets.map((a) => `<span class="tag" style="background:var(--surface-2);color:var(--text-muted)">${escapeHtml(a)}</span>`).join('')}</div>`
+      : ''
+
+  return `
+    <div class="item" style="${it.expired ? 'opacity:0.55;' : ''}">
+      <span class="type-badge ${typeTemaClass}">${typeTemaLabel}</span>
+      ${statusBadge}
+      ${it.newsImportance ? `<span class="tag" style="color:${importanceColor(it.newsImportance)};background:${importanceBg(it.newsImportance)}">${escapeHtml(it.newsImportance)}</span>` : ''}
+      ${it.tag ? `<span class="tag" style="${it.tagColor ? `color:${it.tagColor};background:${it.tagBg || ''}` : ''}">${escapeHtml(IMPACT_LABELS[it.tag] || it.tag)}</span>` : ''}
+      <span class="when">${it.whenHtml}</span>
+      <p class="headline">${escapeHtml(it.title)}</p>
+      ${it.detail ? `<p class="summary">${escapeHtml(it.detail)}</p>` : ''}
+      ${assetsHtml}
+      ${it.porQueImporta ? `<details class="pred-details" style="margin-top:0.3rem"><summary>por que importa</summary><p>${escapeHtml(it.porQueImporta)}</p></details>` : ''}
+      ${it.source ? `<p class="muted" style="font-size:0.68rem;margin-top:0.2rem">Fonte: ${escapeHtml(it.source)}</p>` : ''}
+    </div>
+  `
+}
+
+// A: busca dado de Macro só pra saber se cada KPI citado já tem
+// resultado real (verde) ou ainda não (vermelho) — mesma lógica de
+// casamento já usada dentro da aba Macro.
+async function updateNoticiasRadarKpi() {
+  const el = document.getElementById('noticias-radar-list')
   if (!el) return
 
-  const { data } = await sb
-    .from('prediction_resolutions')
-    .select('direction_correct, actual_return_pct, predictions(direction, market_date, instruments(symbol_internal))')
-    .order('id', { ascending: false })
-    .limit(60)
+  const { data: macro } = await sb
+    .from('macro_dados')
+    .select('indicator_name,pais,release_date')
+    .order('release_date', { ascending: false, nullsFirst: false })
+    .limit(50)
 
-  if (!data || data.length === 0) {
-    el.innerHTML = `<p class="muted">Nenhum palpite resolvido ainda.</p>`
-    return
+  const kpiHasDataMap = {}
+  for (const ci of MACRO_CHECKLIST) {
+    const hasMatch = (macro || []).some(
+      (m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords)
+    )
+    kpiHasDataMap[ci.label + '|' + ci.pais] = hasMatch
   }
 
-  const latestIssueDate = data.reduce((max, r) => {
-    const d = r.predictions?.market_date
-    return !max || (d && d > max) ? d : max
-  }, null)
-
-  const batch = data.filter((r) => r.predictions?.market_date === latestIssueDate)
-  const acertos = batch.filter((r) => r.direction_correct).length
-
-  const summaryEl = document.getElementById('traceability-summary')
-  if (summaryEl) summaryEl.textContent = `Rastreabilidade por ativo (${batch.length})`
-
-  el.innerHTML = `
-    <p class="muted" style="margin-bottom:0.75rem">Palpites emitidos em ${fmtDate(latestIssueDate)} — ${acertos}/${batch.length} corretos:</p>
-    ${batch
-      .map((r) => {
-        const sym = escapeHtml(r.predictions?.instruments?.symbol_internal || '?')
-        const mark = r.direction_correct ? '✅' : '❌'
-        const ret =
-          r.actual_return_pct != null
-            ? `${Number(r.actual_return_pct) > 0 ? '+' : ''}${Number(r.actual_return_pct).toFixed(2)}%`
-            : ''
-        return `<div class="trace-row"><span>${mark} ${sym}</span><span class="muted">${escapeHtml(r.predictions?.direction ?? '')} → ${ret}</span></div>`
-      })
-      .join('')}
-  `
-}
-
-function renderSnapshot(instruments, latestBySymbol) {
-  const byClass = {}
-  for (const inst of instruments) {
-    if (!inst.is_analyzed) continue
-    const cls = inst.asset_class
-    if (!byClass[cls]) byClass[cls] = []
-    byClass[cls].push(inst)
-  }
-
-  return Object.entries(byClass).map(([cls, insts]) => {
-    const rows = insts.map(inst => {
-      const symbol = escapeHtml(inst.symbol_internal)
-      const name = escapeHtml(inst.name || '')
-      const md = latestBySymbol[inst.symbol_internal]
-      if (!md) return `<div class="snap-row"><span>${symbol}<span class="snap-name">${name}</span></span><span class="muted">sem dado</span></div>`
-      const chgClass = md.change_pct > 0 ? 'up' : md.change_pct < 0 ? 'down' : 'flat'
-      const chgTxt = md.change_pct != null ? `${md.change_pct > 0 ? '+' : ''}${md.change_pct}%` : '—'
-      return `<div class="snap-row"><span>${symbol}<span class="snap-name">${name}</span></span><span class="snap-chg ${chgClass}">${chgTxt}</span></div>`
-    }).join('')
-    return `<div class="class-group"><div class="class-title">${ASSET_CLASS_LABELS[cls] || cls}</div>${rows}</div>`
-  }).join('')
-}
-
-function renderNews(events) {
-  if (!events || events.length === 0) return `<p class="muted">Nenhuma notícia registrada hoje.</p>`
-  return events.map(e => `
-    <div class="item">
-      <span class="tag">${THEME_LABELS[e.theme] || e.theme}</span>
-      ${e.impact_direction ? `<span class="tag">${escapeHtml(e.impact_direction)}</span>` : ''}
-      <p class="headline">${escapeHtml(e.headline)}</p>
-      <p class="summary">${escapeHtml(e.summary || '')}</p>
-    </div>
-  `).join('')
-}
-
-function renderRadar(radar) {
-  if (!radar || radar.length === 0) return `<p class="muted">Nenhum evento no radar.</p>`
-  return radar.map(r => `
-    <div class="item">
-      <span class="tag">${THEME_LABELS[r.theme] || r.theme}</span>
-      <span class="tag">${escapeHtml(r.importance)}</span>
-      <span class="when">${r.expected_date ? fmtDate(r.expected_date) : 'data incerta'}</span>
-      <p class="summary" style="margin-top:0.3rem">${escapeHtml(r.description)}</p>
-    </div>
-  `).join('')
+  el.innerHTML = renderNoticiasRadar(noticiasRadarRawData.events, noticiasRadarRawData.radar, kpiHasDataMap)
 }
 
 const VS_CONSENSUS_LABELS = { acima: 'Acima', abaixo: 'Abaixo', em_linha: 'Em linha', sem_consenso: 'Sem consenso' }
 const TENDENCIA_LABELS = { crescendo: '↑ crescendo', estavel: '→ estável', diminuindo: '↓ diminuindo' }
-
-function renderDrivers(drivers) {
-  if (!drivers || drivers.length === 0) return `<p class="muted">Barra de influência ainda não gerada hoje.</p>`
-  const sorted = [...drivers].sort((a, b) => Number(b.forca) - Number(a.forca))
-  return sorted.map(d => `
-    <div class="driver-row">
-      <div class="driver-top">
-        <span class="driver-nome">${escapeHtml(d.nome)}</span>
-        <span class="driver-tendencia">${TENDENCIA_LABELS[d.tendencia] || d.tendencia}</span>
-      </div>
-      <div class="driver-tema">${escapeHtml(d.tema || '')} · força ${Number(d.forca).toFixed(0)}/10</div>
-      <div class="driver-bar-track"><div class="driver-bar-fill ${d.direcao}" style="width:${Number(d.forca) * 10}%"></div></div>
-      <p class="driver-next">${escapeHtml(d.proximo_passo)}</p>
-    </div>
-  `).join('')
+const TENDENCIA_COLOR = { crescendo: 'var(--text-muted)', estavel: 'var(--text-faint)', diminuindo: 'var(--text-muted)' }
+const DRIVER_THEME_LABELS = {
+  juros: 'Juros',
+  equities_tech: 'Equities/Tech',
+  fx: 'Câmbio',
+  commodities: 'Commodities',
+  geopolitica: 'Geopolítica',
+  domestico_br: 'Doméstico BR',
+  sentimento: 'Sentimento',
+  credito: 'Crédito',
+  calendario: 'Calendário',
+  outros: 'Outros',
 }
+
+// Tendência por tema — cresce sozinho conforme os dias passam, sem
+// precisar mexer em código de novo. Agrupa por "tema" (agora travado
+// numa lista fechada, então dá pra comparar entre dias com confiança).
+async function renderThemeTrends(driversToday) {
+  const el = document.getElementById('theme-trends')
+  if (!el) return
+
+  const { data } = await sb.from('drivers').select('market_date, tema, forca, direcao').order('market_date', { ascending: false }).limit(800)
+
+  // Agrupa histórico: tema -> dia -> [forças ASSINADAS], pra tendência
+  // capturar direção, não só magnitude — um tema que vira de +8 pra -8
+  // não pode aparecer como "força 8, estável".
+  const byTema = {}
+  for (const d of data || []) {
+    if (!d.tema) continue
+    if (!byTema[d.tema]) byTema[d.tema] = {}
+    if (!byTema[d.tema][d.market_date]) byTema[d.tema][d.market_date] = []
+    const signed = d.direcao === 'negativo' ? -Number(d.forca) : Number(d.forca)
+    byTema[d.tema][d.market_date].push(signed)
+  }
+
+  // Agrupa os drivers de HOJE por tema — pode ter 0, 1 ou mais no mesmo tema
+  const todayByTema = {}
+  for (const d of driversToday || []) {
+    if (!d.tema) continue
+    if (!todayByTema[d.tema]) todayByTema[d.tema] = []
+    todayByTema[d.tema].push(d)
+  }
+
+  const allTemas = new Set([...Object.keys(byTema), ...Object.keys(todayByTema)])
+
+  if (allTemas.size === 0) {
+    el.innerHTML = `<p class="muted">Drivers &amp; tendências ainda não gerados hoje.</p>`
+    return
+  }
+
+  // Ordena: temas com driver hoje primeiro (pela força máxima de hoje),
+  // temas só-histórico (sem nada hoje) depois.
+  const temaOrder = [...allTemas].sort((a, b) => {
+    const aToday = todayByTema[a] ? Math.max(...todayByTema[a].map((d) => Number(d.forca))) : -1
+    const bToday = todayByTema[b] ? Math.max(...todayByTema[b].map((d) => Number(d.forca))) : -1
+    return bToday - aToday
+  })
+
+  const cards = temaOrder
+    .map((tema) => {
+      const todayDrivers = todayByTema[tema] || []
+      const todayHtml =
+        todayDrivers.length > 0
+          ? todayDrivers
+              .map(
+                (d) => `
+        <div class="theme-today-driver">
+          <div class="driver-top">
+            <span class="driver-nome">${escapeHtml(d.nome)}</span>
+            <span class="driver-tendencia" style="color:${TENDENCIA_COLOR[d.tendencia] || 'var(--text-faint)'}">${TENDENCIA_LABELS[d.tendencia] || d.tendencia}</span>
+          </div>
+          <div class="driver-bar-track"><div class="driver-bar-fill ${d.direcao}" style="width:${Number(d.forca) * 10}%"></div></div>
+          <p class="driver-next">${escapeHtml(d.proximo_passo)}</p>
+        </div>
+      `
+              )
+              .join('')
+          : `<p class="muted" style="font-size:0.72rem">Nenhum driver específico hoje.</p>`
+
+      const byDay = byTema[tema] || {}
+      const days = Object.keys(byDay).sort()
+      const series = days.map((day) => ({
+        day,
+        avg: byDay[day].reduce((s, v) => s + v, 0) / byDay[day].length,
+      }))
+
+      let trendHtml
+      if (series.length < 3) {
+        trendHtml = `<p class="muted" style="font-size:0.68rem">Tendência aparece com mais dias (hoje: ${series.length}).</p>`
+      } else {
+        const bars = series
+          .map((s) => {
+            const magPct = Math.min(100, (Math.abs(s.avg) / 10) * 100)
+            const isPos = s.avg >= 0
+            const color = isPos ? 'var(--risk-on-strong)' : 'var(--risk-off-strong)'
+            return `
+              <div style="flex:1;display:flex;flex-direction:column;height:100%;" title="${fmtShortDate(s.day)}: ${s.avg > 0 ? '+' : ''}${s.avg.toFixed(1)}">
+                <div style="flex:1;display:flex;align-items:flex-end;justify-content:center;">
+                  ${isPos ? `<div style="width:60%;height:${magPct}%;background:${color};border-radius:2px 2px 0 0;"></div>` : ''}
+                </div>
+                <div style="flex:1;display:flex;align-items:flex-start;justify-content:center;">
+                  ${!isPos ? `<div style="width:60%;height:${magPct}%;background:${color};border-radius:0 0 2px 2px;"></div>` : ''}
+                </div>
+              </div>
+            `
+          })
+          .join('')
+        const latest = series[series.length - 1]
+        const first = series[0]
+        const trendArrow = latest.avg > first.avg + 0.5 ? '↑' : latest.avg < first.avg - 0.5 ? '↓' : '→'
+        trendHtml = `
+          <div class="muted" style="font-size:0.68rem;margin-bottom:0.2rem">${trendArrow} influência ${latest.avg > 0 ? '+' : ''}${latest.avg.toFixed(1)}/10 (histórico, positivo/negativo)</div>
+          <div style="position:relative;height:32px;">
+            <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--border);"></div>
+            <div style="display:flex;height:100%;gap:2px;position:relative;">${bars}</div>
+          </div>
+        `
+      }
+
+      return `
+        <div class="theme-card">
+          <div class="theme-card-title">${DRIVER_THEME_LABELS[tema] || tema}</div>
+          ${todayHtml}
+          <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px dashed var(--border);">
+            ${trendHtml}
+          </div>
+        </div>
+      `
+    })
+    .join('')
+
+  el.innerHTML = `<div class="theme-trends-grid">${cards}</div>`
+}
+
+let currentMainTab = 'termometro'
 
 async function loadDashboard(forcedDate) {
   const app = document.getElementById('app')
   try {
-    const { data: allDaysData } = await sb
+    const { data: allDaysData, error: allDaysError } = await sb
       .from('conclusao_operacional')
       .select('market_date')
       .order('market_date', { ascending: false })
       .limit(30)
 
+    if (allDaysError) {
+      app.innerHTML = `<div class="error">ERRO DE CONSULTA — não deu pra confirmar se existe dado ou não. Detalhe: ${escapeHtml(allDaysError.message)}</div>`
+      return
+    }
+
+    // Item 9: a data "principal" vinha só de conclusao_operacional — se
+    // a execução de hoje falhar ANTES de criar essa linha, o sistema
+    // mostraria o dia anterior como se fosse normal, sem avisar que
+    // hoje falhou. Busca a execução mais recente separadamente pra
+    // detectar esse caso.
+    const { data: latestRunData, error: latestRunError } = await sb.from('analysis_runs').select('market_date, status, notes').order('market_date', { ascending: false }).limit(1).maybeSingle()
+    if (latestRunError) console.error('Falha ao buscar analysis_runs mais recente:', latestRunError.message)
+
     const availableDays = (allDaysData || []).map((d) => d.market_date)
     const marketDate = forcedDate || availableDays[0]
+    selectedMarketDate = marketDate
 
     if (!marketDate) {
       app.innerHTML = `<div class="error">Nenhum dia completo ainda. O pipeline roda todo dia útil às 22h BRT — volte depois da primeira execução completa.</div>`
       return
     }
 
-    const [instrumentsRes, marketDataRes, regimeRes, fgRes, concRes, predsRes, eventsRes, radarRes, cenariosRes, veredictoRes, fluxoRes, driversRes, runStatusRes] = await Promise.all([
-      sb.from('instruments').select('symbol_internal,name,asset_class,is_analyzed').eq('active', true),
+    // Dia anterior disponível (não necessariamente "ontem" no calendário
+    // — pula fim de semana/feriado) — usado só pra comparar convicção.
+    const marketDateIdx = availableDays.indexOf(marketDate)
+    const previousMarketDate = marketDateIdx >= 0 && marketDateIdx + 1 < availableDays.length ? availableDays[marketDateIdx + 1] : null
+
+    const [marketDataRes, regimeRes, regimeOntemRes, concRes, predsRes, predsOntemRes, eventsRes, radarRes, cenariosRes, cenariosOntemRes, veredictoRes, fluxoRes, driversRes, runStatusRes, accuracyRes, regimeThresholdsRes] = await Promise.all([
       sb.from('market_data').select('close,change_pct,market_date,instruments(symbol_internal)').order('market_date', { ascending: false }),
       sb.from('regime_diario').select('*').eq('market_date', marketDate),
-      sb.from('fear_greed').select('*, fear_greed_components(*)').eq('market_date', marketDate).maybeSingle(),
-      sb.from('conclusao_operacional').select('texto,driver_do_dia,narrativa_dominante,sinais_alerta,o_que_mercado_precisa').eq('market_date', marketDate).maybeSingle(),
+      previousMarketDate
+        ? sb.from('regime_diario').select('mercado,global_score').eq('market_date', previousMarketDate)
+        : Promise.resolve({ data: [] }),
+      sb.from('conclusao_operacional').select('texto,driver_do_dia,drivers_ainda_ativos,narrativa_dominante,sinais_alerta,o_que_mercado_precisa,correlacao_do_dia,regime_condicional,divergencia_sinais,confirmacao_cross_asset,narrativa_semana,narrativa_mes').eq('market_date', marketDate).maybeSingle(),
       sb.from('predictions').select('*,instruments(symbol_internal,name,asset_class)').eq('market_date', marketDate).order('confidence_pct', { ascending: false }),
-      sb.from('events').select('*').eq('market_date', marketDate),
+      previousMarketDate
+        ? sb.from('predictions').select('instrument_id,horizon,direction,confidence_pct').eq('market_date', previousMarketDate)
+        : Promise.resolve({ data: [] }),
+      sb.from('events').select('*, event_instruments(instruments(symbol_internal))').eq('market_date', marketDate),
       sb.from('radar_eventos').select('*').eq('market_date', marketDate).neq('theme', 'macro').order('expected_date', { ascending: true, nullsFirst: false }),
-      sb.from('cenarios').select('tipo,condicao,efeito_esperado').eq('market_date', marketDate),
+      sb.from('cenarios').select('tipo,condicao,efeito_esperado,probabilidade,favorece,pressiona,invalida_se').eq('market_date', marketDate),
+      previousMarketDate
+        ? sb.from('cenarios').select('tipo,probabilidade').eq('market_date', previousMarketDate)
+        : Promise.resolve({ data: [] }),
       sb.from('veredito_operacional').select('mercado,decisao,razao,invalidation_note').eq('market_date', marketDate),
       sb.from('fluxo_por_classe').select('asset_class,status,motivo').eq('market_date', marketDate),
       sb.from('drivers').select('nome,tema,direcao,forca,tendencia,proximo_passo').eq('market_date', marketDate),
       sb.from('analysis_runs').select('status,notes').eq('market_date', marketDate).maybeSingle(),
+      sb.from('prediction_resolutions').select('direction_correct, predictions(instrument_id, horizon)').order('id', { ascending: false }).limit(500),
+      sb
+        .from('config')
+        .select('key,value')
+        .in('key', ['regime_threshold_risk_on_forte', 'regime_threshold_risk_on_fraco', 'regime_threshold_risk_off_moderado', 'regime_threshold_risk_off_forte']),
     ])
+
+    // Confiabilidade histórica por ativo (só horizonte 1D — é o que tem
+    // mais amostra) — cresce sozinho conforme os dias passam, sem
+    // precisar mexer em código de novo.
+    const accuracyByInstrument = {}
+    for (const r of accuracyRes.data || []) {
+      if (r.predictions?.horizon !== '1D') continue
+      const iid = r.predictions?.instrument_id
+      if (iid == null) continue
+      if (!accuracyByInstrument[iid]) accuracyByInstrument[iid] = { correct: 0, total: 0 }
+      accuracyByInstrument[iid].total++
+      if (r.direction_correct) accuracyByInstrument[iid].correct++
+    }
 
     const latestBySymbol = {}
     for (const row of marketDataRes.data || []) {
@@ -1512,16 +3016,22 @@ async function loadDashboard(forcedDate) {
       latestBySymbol[sym] = row
     }
 
-    allPredictions = predsRes.data || []
-    currentHorizon = '1D'
-
     const loadedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     const isStale = marketDate !== todayBRTClient()
-    const staleNote = isStale
-      ? forcedDate
-        ? `<div class="stale-note">Visualizando ${fmtDate(marketDate)} (dia anterior, escolhido no seletor)</div>`
-        : `<div class="stale-note">Mostrando o último dia completo (${fmtDate(marketDate)}) — hoje ainda está em andamento</div>`
-      : ''
+    // Item 9+10: só assume "hoje está em andamento" quando é isso
+    // mesmo — se uma execução mais recente que o último relatório
+    // válido falhou (ou ficou incompleta), avisa isso explicitamente,
+    // em vez de mostrar o dia anterior como se nada tivesse acontecido.
+    const newerRunAttempted = latestRunData && latestRunData.market_date > marketDate
+    let staleNote = ''
+    if (forcedDate) {
+      staleNote = `<div class="stale-note">Visualizando ${fmtDate(marketDate)} (dia anterior, escolhido no seletor)</div>`
+    } else if (newerRunAttempted && latestRunData.status !== 'success') {
+      const statusLabel = latestRunData.status === 'failed' ? 'falhou' : latestRunData.status === 'running' ? 'ainda está em andamento' : 'ficou incompleta'
+      staleNote = `<div class="stale-note">⚠ Execução de ${fmtDate(latestRunData.market_date)} ${statusLabel}${latestRunData.notes ? ' — ' + escapeHtml(latestRunData.notes) : ''} — mostrando último relatório válido de ${fmtDate(marketDate)}</div>`
+    } else if (isStale) {
+      staleNote = `<div class="stale-note">Mostrando o último dia completo: ${fmtDate(marketDate)}</div>`
+    }
 
     const runStatus = runStatusRes.data?.status
     let healthDotClass = 'muted'
@@ -1558,8 +3068,7 @@ async function loadDashboard(forcedDate) {
       <header class="top">
         <h1>SISTEMA DE MERCADO</h1>
         <div class="header-right">
-          ${daySelectorHtml}
-          <span class="date">${fmtDate(marketDate)}</span>
+          ${daySelectorHtml || `<span class="date">${fmtDate(marketDate)}</span>`}
           <span class="updated-badge"><span class="health-dot ${healthDotClass}" title="${healthDotTitle}"></span>pipeline ${healthLabel} · ${loadedAt}</span>
           <button class="refresh-btn" id="refresh-btn">↻ atualizar</button>
         </div>
@@ -1568,113 +3077,111 @@ async function loadDashboard(forcedDate) {
       ${healthBanner}
       ${staleNote}
 
-      <div class="dashboard-grid">
-        <div class="col-side">
-          <div>
-            ${renderGauge(regimeRes.data)}
-            ${renderFearGreed(fgRes.data)}
-            ${renderHighlights(latestBySymbol, instrumentsRes.data || [])}
-          </div>
-          <div>
-            <p class="eyebrow">Track record</p>
-            <div class="card" id="track-record"><p class="muted">carregando…</p></div>
-          </div>
-        </div>
+      <nav class="tab-nav">
+        <button class="tab-btn ${currentMainTab === 'termometro' ? 'active' : ''}" data-tab="termometro" onclick="switchMainTab('termometro')">Termômetro</button>
+        <button class="tab-btn ${currentMainTab === 'palpites' ? 'active' : ''}" data-tab="palpites" onclick="switchMainTab('palpites')">Palpites</button>
+        <button class="tab-btn ${currentMainTab === 'analise' ? 'active' : ''}" data-tab="analise" onclick="switchMainTab('analise')">Análise</button>
+        <button class="tab-btn ${currentMainTab === 'noticias' ? 'active' : ''}" data-tab="noticias" onclick="switchMainTab('noticias')">Notícias &amp; Radar</button>
+        <button class="tab-btn ${currentMainTab === 'dados' ? 'active' : ''}" data-tab="dados" onclick="switchMainTab('dados')">Macro</button>
+        <button class="tab-btn ${currentMainTab === 'sistema' ? 'active' : ''}" data-tab="sistema" onclick="switchMainTab('sistema')">Sistema</button>
+      </nav>
 
-        <div class="col-main">
-          <section style="margin-top:0">
-            <p class="eyebrow">Sinais de entrada</p>
-            <div class="card">${renderEntrySignals(predsRes.data, veredictoRes.data, fluxoRes.data)}</div>
-          </section>
-
-          <details class="section-collapse" open>
-            <summary>Palpites (${(predsRes.data || []).length})</summary>
-            <div class="horizon-tabs">
-              <button class="horizon-btn active" data-horizon="1D" onclick="switchHorizon('1D')">1 dia</button>
-              <button class="horizon-btn" data-horizon="1W" onclick="switchHorizon('1W')">1 semana</button>
-              <button class="horizon-btn" data-horizon="1M" onclick="switchHorizon('1M')">1 mês</button>
-            </div>
-            <div class="card" id="predictions-container">${renderPredictions(predsRes.data, '1D')}</div>
-          </details>
-
-          <section>
-            <p class="eyebrow">Conclusão operacional</p>
-            <div class="card">${renderSynthesis(concRes.data)}</div>
-          </section>
-
-          <section>
-            <p class="eyebrow">Barra de influência</p>
-            <div class="card">${renderDrivers(driversRes.data)}</div>
-          </section>
-
-          <section>
-            <p class="eyebrow">Veredicto operacional</p>
-            <div class="card">${renderVeredito(veredictoRes.data)}</div>
-          </section>
-
-          <section>
-            <p class="eyebrow">Cenários</p>
-            <div class="card">${renderCenarios(cenariosRes.data)}</div>
-          </section>
-        </div>
+      <div class="tab-panel ${currentMainTab === 'termometro' ? 'active' : ''}" id="tab-termometro">
+        ${renderGauge(regimeRes.data, veredictoRes.data, regimeThresholdsRes.data, regimeOntemRes.data)}
+        <section>
+          <p class="eyebrow">Sentimento EUA</p>
+          <div class="card" id="fg-detail"><p class="muted">carregando…</p></div>
+        </section>
       </div>
 
-      <div class="below-grid">
-        <details class="section-collapse">
-          <summary id="traceability-summary">Rastreabilidade por ativo</summary>
-          <div class="card" id="traceability"><p class="muted">carregando…</p></div>
-        </details>
+      <div class="tab-panel ${currentMainTab === 'palpites' ? 'active' : ''}" id="tab-palpites">
+        ${
+          concRes.data?.narrativa_semana || concRes.data?.narrativa_mes
+            ? `
+        <section style="margin-top:0">
+          <div class="card" style="display:flex;gap:1.5rem;flex-wrap:wrap;padding:0.9rem 1.1rem">
+            ${concRes.data?.narrativa_semana ? `<div style="flex:1;min-width:240px"><p class="muted" style="font-size:0.7rem;margin-bottom:0.2rem">SEMANA</p><p class="prose-p" style="margin:0;font-size:0.85rem">${highlightPct(concRes.data.narrativa_semana)}</p></div>` : ''}
+            ${concRes.data?.narrativa_mes ? `<div style="flex:1;min-width:240px"><p class="muted" style="font-size:0.7rem;margin-bottom:0.2rem">MÊS</p><p class="prose-p" style="margin:0;font-size:0.85rem">${highlightPct(concRes.data.narrativa_mes)}</p></div>` : ''}
+          </div>
+        </section>
+        `
+            : ''
+        }
 
-        <details class="section-collapse" style="margin-top:1rem" open>
-          <summary>Semana em andamento</summary>
-          <div class="card" id="progress-1W"><p class="muted">carregando…</p></div>
-        </details>
+        <section ${concRes.data?.narrativa_semana || concRes.data?.narrativa_mes ? '' : 'style="margin-top:0"'}>
+          <div class="card" id="track-record-summary" style="padding:0.6rem 1.1rem"><p class="muted" style="font-size:0.8rem">carregando track record…</p></div>
+        </section>
 
-        <details class="section-collapse" style="margin-top:1rem">
-          <summary>Mês em andamento</summary>
-          <div class="card" id="progress-1M"><p class="muted">carregando…</p></div>
-        </details>
+        <section>
+          <p class="eyebrow">Palpites (${(predsRes.data || []).length})</p>
+          <details class="pred-details" style="margin-bottom:0.75rem">
+            <summary>o que significa positivo/negativo/neutro (viés por classe)</summary>
+            <p><strong>Positivo:</strong> evidência de apetite por risco entrando naquela classe — geralmente preço subindo. Isso é viés de preço, não fluxo real de capital (fundos/ETF) — não estamos coletando esse dado.</p>
+            <p><strong>Negativo:</strong> apetite por risco saindo — geralmente preço caindo.</p>
+            <p><strong>Neutro:</strong> sem direção clara, dados mistos dentro da classe.</p>
+            <p><strong>Atenção com Volatilidade (VIX):</strong> a lógica se inverte — VIX <em>caindo</em> é lido como "negativo" (saída do trade de proteção, sinal calmo/positivo pro mercado), e VIX <em>subindo</em> como "positivo" (entrada em proteção, sinal de medo). Não confunda com "dinheiro saindo do mercado" — é o oposto do que pareceria à primeira vista.</p>
+          </details>
+          <div class="card" id="predictions-container">${renderPredictions(predsRes.data, latestBySymbol, accuracyByInstrument, fluxoRes.data, predsOntemRes.data)}</div>
+        </section>
 
-        <details class="section-collapse" style="margin-top:1rem">
-          <summary>Notícias de hoje (${(eventsRes.data || []).length})</summary>
-          <div class="card">${renderNews(eventsRes.data)}</div>
-        </details>
+        <section>
+          <p class="eyebrow">Track record — detalhe</p>
+          <div class="card" id="track-record"><p class="muted">carregando…</p></div>
+        </section>
+      </div>
 
-        <details class="section-collapse" style="margin-top:1rem">
-          <summary>Radar — próximos dias (${(radarRes.data || []).length})</summary>
-          <div class="card">${renderRadar(radarRes.data)}</div>
-        </details>
+      <div class="tab-panel ${currentMainTab === 'analise' ? 'active' : ''}" id="tab-analise">
+        ${renderAnaliseKpi(concRes.data, cenariosRes.data, cenariosOntemRes.data)}
 
-        <details class="section-collapse" style="margin-top:1rem">
-          <summary>Calendário econômico</summary>
+        <section style="margin-top:0">
+          <p class="eyebrow">Conclusão operacional</p>
+          <div class="card">${renderSynthesis(concRes.data)}</div>
+        </section>
+
+        <section>
+          <p class="eyebrow">Cenários &amp; Gatilhos</p>
+          <div class="card">${renderCenarios(cenariosRes.data)}</div>
+        </section>
+
+        <section>
+          <p class="eyebrow">Drivers &amp; Tendências</p>
+          <div class="card" id="theme-trends"><p class="muted">carregando…</p></div>
+        </section>
+      </div>
+
+      <div class="tab-panel ${currentMainTab === 'noticias' ? 'active' : ''}" id="tab-noticias">
+        <section style="margin-top:0">
+          <p class="eyebrow">Notícias &amp; Radar</p>
+          <div class="card" id="noticias-radar-list">${renderNoticiasRadar(eventsRes.data, radarRes.data)}</div>
+        </section>
+      </div>
+
+      <div class="tab-panel ${currentMainTab === 'dados' ? 'active' : ''}" id="tab-dados">
+        <section style="margin-top:0">
+          <p class="eyebrow">Macro</p>
           <div class="card" id="calendar"><p class="muted">carregando…</p></div>
-        </details>
+        </section>
+      </div>
 
-        <details class="section-collapse" style="margin-top:1rem">
-          <summary>Fluxo por classe</summary>
-          <div class="card">${renderFluxo(fluxoRes.data)}</div>
-        </details>
-
-        <details class="section-collapse" style="margin-top:1rem">
-          <summary>Snapshot completo por classe</summary>
-          <div class="card">${renderSnapshot(instrumentsRes.data || [], latestBySymbol)}</div>
-        </details>
-
-        <details class="section-collapse" style="margin-top:1rem">
-          <summary>Configurações do sistema</summary>
+      <div class="tab-panel ${currentMainTab === 'sistema' ? 'active' : ''}" id="tab-sistema">
+        <section style="margin-top:0">
+          <p class="eyebrow">Configurações do sistema</p>
           <div class="card" id="config-panel"><p class="muted">carregando…</p></div>
-        </details>
+        </section>
       </div>
 
       <footer class="foot">dados via Supabase · Sistema de Mercado</footer>
     `
 
+    renderFearGreedDetail()
     renderTrackRecord()
-    renderTraceability()
-    renderInProgress('1W', latestBySymbol)
-    renderInProgress('1M', latestBySymbol)
+    renderPalpitesRastreabilidade(marketDate, latestBySymbol)
+    renderThemeTrends(driversRes.data)
     renderCalendar()
-    renderConfig()
+    renderConfig(marketDate)
+
+    noticiasRadarRawData = { events: eventsRes.data || [], radar: radarRes.data || [] }
+    updateNoticiasRadarKpi()
 
     const btn = document.getElementById('refresh-btn')
     if (btn) {
@@ -1695,6 +3202,12 @@ async function loadDashboard(forcedDate) {
     console.error(err)
     app.innerHTML = `<div class="error">Erro ao carregar: ${err.message}</div>`
   }
+}
+
+function switchMainTab(tab) {
+  currentMainTab = tab
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab))
+  document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + tab))
 }
 
 loadDashboard()
