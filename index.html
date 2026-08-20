@@ -1311,9 +1311,9 @@ function renderSingleGauge(marketLabel, r, veredito, ontemScore, th, history, ve
 // aba pode estar tentado a agir só pelo tom, e ela não é sinal de
 // compra — é acompanhamento.
 const PREVIA_STATUS_LABELS = {
-  confirmada: 'Leitura de ontem CONFIRMADA',
-  parcial: 'Leitura de ontem PARCIALMENTE confirmada',
-  contrariada: 'Leitura de ontem CONTRARIADA',
+  confirmada: 'Leitura de ontem CONFIRMADA até agora',
+  parcial: 'Leitura de ontem PARCIALMENTE confirmada até agora',
+  contrariada: 'Leitura de ontem CONTRARIADA até agora',
   indeterminada: 'INDETERMINADA — sem movimento suficiente pra dizer',
 }
 const PREVIA_STATUS_COLOR = {
@@ -1334,8 +1334,20 @@ const PRESSAO_LABELS = { melhorando: '↑ melhorando', piorando: '↓ piorando',
 const PRESSAO_COLOR = { melhorando: 'var(--accent)', piorando: 'var(--neutral)', estavel: 'var(--text-faint)', sem_dado: 'var(--text-faint)' }
 const COMPONENTE_LABELS = { equities: 'Ações', credito: 'Crédito', volatilidade: 'Volatilidade', juros: 'Juros', cambio: 'Câmbio' }
 const EVOLUCAO_LABELS = { ganhando_evidencia: 'ganhando evidência', perdendo_evidencia: 'perdendo evidência', sem_mudanca: 'sem mudança' }
-const INVALIDACAO_LABELS = { acionada: 'ACIONADA', nao_acionada: 'não acionada', nao_verificavel: 'não verificável' }
-const INVALIDACAO_COLOR = { acionada: 'var(--neutral)', nao_acionada: 'var(--text-faint)', nao_verificavel: 'var(--text-faint)' }
+const INVALIDACAO_LABELS = {
+  acionada: 'ACIONADA',
+  nao_acionada: 'não acionada até agora',
+  pendente: 'pendente — evento ainda não ocorreu',
+  nao_verificavel: 'não verificável — critério subjetivo',
+  sem_dados: 'sem dados pra checar',
+}
+const INVALIDACAO_COLOR = {
+  acionada: 'var(--neutral)',
+  nao_acionada: 'var(--text-muted)',
+  pendente: 'var(--text-faint)',
+  nao_verificavel: 'var(--text-faint)',
+  sem_dados: 'var(--text-faint)',
+}
 
 async function renderPrevia() {
   const el = document.getElementById('previa-content')
@@ -1369,17 +1381,28 @@ async function renderPrevia() {
   const statusColor = PREVIA_STATUS_COLOR[previa.status] || 'var(--text-muted)'
 
   const cross = Array.isArray(previa.cross_asset) ? previa.cross_asset : []
-  const relevantes = cross.filter((c) => c.relevante)
-  const confirmamRelevantes = relevantes.filter((c) => c.status === 'confirma').length
-  const comDado = cross.filter((c) => c.status !== 'sem_dado')
+  const nConfirma = cross.filter((c) => c.status === 'confirma').length
+  const nContradiz = cross.filter((c) => c.status === 'nao_confirma').length
+  const nNeutro = cross.filter((c) => c.status === 'neutro').length
+  const nSemDado = cross.filter((c) => c.status === 'sem_dado').length
+  const contradicoesCentrais = cross.filter((c) => c.relevante && c.status === 'nao_confirma').map((c) => CROSS_CLASSE_LABELS[c.classe] || c.classe)
+  const confirmacoesCentrais = cross.filter((c) => c.relevante && c.status === 'confirma').map((c) => CROSS_CLASSE_LABELS[c.classe] || c.classe)
 
   const crossHtml =
     cross.length > 0
       ? `
     <section>
-      <p class="eyebrow">Confirmação cross-asset</p>
+      <p class="eyebrow">Confirmação da leitura de ontem</p>
       <div class="card">
-        <p class="muted" style="font-size:0.72rem;margin-bottom:0.6rem">${confirmamRelevantes} de ${relevantes.length} sinais <strong>relevantes pra tese de hoje</strong> confirmam · ${comDado.length} de ${cross.length} classes com dado disponível. As classes marcadas como relevantes pesam mais na leitura do dia — não trate como se todas valessem igual.</p>
+        <div style="display:flex;gap:1.25rem;flex-wrap:wrap;font-size:0.8rem;margin-bottom:0.5rem">
+          <span><strong style="color:var(--accent)">${nConfirma}</strong> <span class="muted">confirmam</span></span>
+          <span><strong style="color:var(--neutral)">${nContradiz}</strong> <span class="muted">contradizem</span></span>
+          <span><strong class="muted">${nNeutro}</strong> <span class="muted">inconclusivos</span></span>
+          <span><strong class="muted">${nSemDado}</strong> <span class="muted">sem dado</span></span>
+        </div>
+        ${confirmacoesCentrais.length > 0 ? `<p style="font-size:0.75rem;margin-bottom:0.15rem"><span class="muted">Confirmações centrais: </span>${confirmacoesCentrais.join(', ')}</p>` : ''}
+        ${contradicoesCentrais.length > 0 ? `<p style="font-size:0.75rem;margin-bottom:0.5rem"><span class="muted">Contradições centrais: </span>${contradicoesCentrais.join(', ')}</p>` : ''}
+        <p class="muted" style="font-size:0.7rem;margin-bottom:0.6rem">Cada linha responde só a uma pergunta: o movimento de hoje bate com o que a leitura de ontem dizia? As marcadas como <strong>centrais</strong> são os sinais dominantes pra tese de hoje — por isso não há uma fração do tipo "X de 7", que sugeriria votação com peso igual.</p>
         ${cross
           .map(
             (c) => `
@@ -1387,7 +1410,7 @@ async function renderPrevia() {
             <span style="color:${CROSS_STATUS_COLOR[c.status] || 'var(--text-faint)'};font-weight:700;min-width:14px">${CROSS_STATUS_MARK[c.status] || '?'}</span>
             <div style="flex:1">
               <span style="font-size:0.82rem;font-weight:${c.relevante ? '700' : '400'}">${CROSS_CLASSE_LABELS[c.classe] || c.classe}</span>
-              ${c.relevante ? `<span class="tag" style="margin-left:0.4rem;font-size:0.6rem;color:var(--text-muted)">relevante hoje</span>` : ''}
+              ${c.relevante ? `<span class="tag" style="margin-left:0.4rem;font-size:0.6rem;color:var(--text-muted)">central</span>` : ''}
               ${c.nota ? `<div class="muted" style="font-size:0.75rem;margin-top:0.1rem">${escapeHtml(c.nota)}</div>` : ''}
             </div>
           </div>
