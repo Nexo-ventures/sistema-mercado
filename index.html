@@ -425,6 +425,7 @@
     gap: 1rem;
     align-items: start;
   }
+  .gauge-row.stacked { grid-template-columns: 1fr; }
   .gauge-group-label {
     font-family: var(--font-mono);
     font-size: 0.7rem;
@@ -546,16 +547,20 @@
     line-height: 1.4;
   }
 
+  /* Convicção com peso visual reduzido de propósito: o track record
+     mostra que hoje ela não discrimina acerto de erro (45% quando
+     acertou, 45% quando errou). Volta a ganhar destaque se/quando a
+     calibração provar que carrega informação. */
   .pred-conf {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     white-space: nowrap;
-    padding: 0.1rem 0.4rem;
+    padding: 0.05rem 0.3rem;
     border-radius: 4px;
-    background: var(--surface-3, rgba(255,255,255,0.05));
+    background: transparent;
   }
-  .pred-conf.conf-high { color: var(--accent); font-weight: 700; }
-  .pred-conf.conf-mid { color: var(--text-muted); }
+  .pred-conf.conf-high { color: var(--text-muted); font-weight: 600; }
+  .pred-conf.conf-mid { color: var(--text-faint); }
   .pred-conf.conf-low { color: var(--text-faint); }
 
   .pred-align {
@@ -577,8 +582,12 @@
   }
   .pred-change.mantem { color: var(--text-faint); background: var(--surface-2); }
   .pred-change.virou { color: var(--neutral); background: rgba(232, 176, 75, 0.12); font-weight: 700; }
-  .pred-change.reforcou { color: var(--risk-on-strong); background: rgba(63, 214, 126, 0.1); }
-  .pred-change.enfraqueceu { color: var(--risk-off-strong); background: rgba(240, 69, 60, 0.1); }
+  /* Convicção subindo ou caindo não é "bom" nem "ruim" — é só mais ou
+     menos confiança na MESMA tese. Verde/vermelho aqui sugeriria que
+     convicção caindo é má notícia, o que não é verdade (cair a
+     convicção num palpite de baixa não é ruim pra você). */
+  .pred-change.reforcou { color: var(--accent); background: rgba(110, 231, 214, 0.1); }
+  .pred-change.enfraqueceu { color: var(--text-muted); background: var(--surface-3, rgba(255,255,255,0.05)); }
 
   .pred-instrument-block { padding: 1.1rem 0; border-bottom: 2px solid var(--border); }
   .pred-instrument-block:last-child { border-bottom: none; }
@@ -878,6 +887,19 @@ const FG_COMPONENT_DESC = {
 const CENARIO_LABELS = { expansao: 'Expansão', base: 'Base', estresse: 'Estresse' }
 const HORIZON_LABELS = { '1D': '1 dia', '1W': '1 semana', '1M': '1 mês' }
 
+// A coleta às vezes devolve markdown (**negrito**) dentro do texto, que
+// vaza cru na tela já que renderizamos como texto puro. Limpa os
+// marcadores mais comuns sem tentar interpretar formatação.
+function stripMarkdown(str) {
+  if (!str) return ''
+  return String(str)
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/(^|\s)\*(\S.*?\S)\*(?=\s|$)/g, '$1$2')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/\[(\d+)\]/g, '')
+    .trim()
+}
+
 function escapeHtml(str) {
   if (str == null) return ''
   return String(str)
@@ -918,6 +940,256 @@ function gaugeAngle(score) {
 // do desenho (100,105 · r=85), mesma fórmula de ângulo do ponteiro.
 // Verificado contra os pontos fixos originais (-40/-15/15/40) antes
 // de virar dinâmico, pra garantir que a matemática bate.
+// Gráfico de várias linhas comparando VARIAÇÃO desde o 1º dia — usado
+// pra sobrepor evolução do score com o que os índices realmente
+// fizeram. Normaliza tudo como "quanto mudou desde o início", senão
+// score (-100 a +100) e preço (~6.000 pts) não caberiam na mesma
+// escala. series = [{label, color, points:[{date, value}], unit}]
+function renderMultiLineChart(series, opts) {
+  const { height = 250, viesPorDia } = opts || {}
+  const valid = (series || []).filter((s) => s.points && s.points.length >= 2)
+  if (valid.length === 0) return ''
+
+  // A LINHA usa variação acumulada desde o 1º dia (é isso que mostra
+  // a tendência do período). O RÓTULO em cada ponto mostra a variação
+  // do DIA (dia vs. dia anterior) — que responde "o que aconteceu
+  // naquele dia", leitura diferente e complementar.
+  const normalized = valid.map((s) => {
+    const base = Number(s.points[0].value)
+    return {
+      ...s,
+      norm: s.points.map((p, i) => {
+        const cur = Number(p.value)
+        const prev = i > 0 ? Number(s.points[i - 1].value) : null
+        return {
+          date: p.date,
+          raw: cur,
+          // posição no gráfico: acumulado desde o início
+          value: s.unit === 'pct' ? ((cur - base) / base) * 100 : cur - base,
+          // rótulo: variação do dia
+          daily: prev == null ? null : s.unit === 'pct' ? ((cur - prev) / prev) * 100 : cur - prev,
+        }
+      }),
+    }
+  })
+
+  // ESCALA SEPARADA POR TIPO: o score varia em números grandes (+2, -5)
+  // e os índices em números pequenos (+0,7%, -0,2%). Na mesma régua, o
+  // score domina e achata os índices numa linha quase reta. Cada tipo
+  // ganha a altura toda do gráfico, então os dois mostram o movimento
+  // real — a comparação aqui é de FORMATO/direção, não de valor.
+  function scaleFor(unit) {
+    const vals = normalized.filter((s) => s.unit === unit).flatMap((s) => s.norm.map((p) => p.value))
+    if (vals.length === 0) return { min: -1, max: 1, range: 2 }
+    const dMin = Math.min(...vals, 0)
+    const dMax = Math.max(...vals, 0)
+    const sp = dMax - dMin || 1
+    const pd = sp * 0.18
+    const mn = dMin - pd
+    const mx = dMax + pd
+    return { min: mn, max: mx, range: mx - mn || 1 }
+  }
+  const scales = { abs: scaleFor('abs'), pct: scaleFor('pct') }
+  const yFor = (p, unit) => {
+    const sc = scales[unit] || scales.pct
+    return 100 - ((p.value - sc.min) / sc.range) * 100
+  }
+  // Linha do zero: usa a escala dos índices (a que interessa comparar
+  // com "não mudou") — se não houver índice, cai na do score.
+  const zScale = scales.pct.range > 2 || normalized.some((s) => s.unit === 'pct') ? scales.pct : scales.abs
+  const zeroY = 100 - ((0 - zScale.min) / zScale.range) * 100
+
+  const paths = normalized
+    .map((s) => {
+      const stepX = 100 / Math.max(1, s.norm.length - 1)
+      const d = s.norm.map((p, i) => `${i === 0 ? 'M' : 'L'} ${(i * stepX).toFixed(2)},${yFor(p, s.unit).toFixed(2)}`).join(' ')
+      return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>`
+    })
+    .join('')
+
+  // Bolinhas FORA do SVG — dentro dele viram elipse achatada, porque o
+  // preserveAspectRatio="none" (necessário pra linha ocupar a largura
+  // toda) estica o círculo junto. Como div posicionada, fica redonda
+  // de verdade.
+  const dots = normalized
+    .map((s) => {
+      const stepX = 100 / Math.max(1, s.norm.length - 1)
+      return s.norm
+        .map((p, i) => {
+          const x = (i * stepX).toFixed(2)
+          const y = yFor(p, s.unit).toFixed(2)
+          const acum = s.unit === 'pct' ? `${p.value > 0 ? '+' : ''}${p.value.toFixed(2)}% no período` : `${p.raw.toFixed(0)} (${p.value > 0 ? '+' : ''}${p.value.toFixed(0)} no período)`
+          const dia = p.daily == null ? 'primeiro dia' : s.unit === 'pct' ? `${p.daily > 0 ? '+' : ''}${p.daily.toFixed(2)}% no dia` : `${p.daily > 0 ? '+' : ''}${p.daily.toFixed(0)} pts no dia`
+          return `<div title="${s.label} · ${fmtShortDate(p.date)}&#10;${dia}&#10;${acum}" style="position:absolute;left:${x}%;top:${y}%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:${s.color};border:1.5px solid var(--surface);cursor:help"></div>`
+        })
+        .join('')
+    })
+    .join('')
+
+  // Rótulo em cada ponto = variação DO DIA (a tendência do período já
+  // é lida visualmente pela linha, então o número conta outra coisa).
+  // Alterna acima/abaixo por série pra não empilhar quando as linhas
+  // se cruzam. Negativo ganha ▼ pra bater o olho — sem trocar a cor,
+  // que é o que identifica qual série é qual.
+  const valueLabels = normalized
+    .map((s, si) => {
+      if (s.norm.length > 10) return ''
+      const stepX = 100 / Math.max(1, s.norm.length - 1)
+      const above = si % 2 === 0
+      return s.norm
+        .map((p, i) => {
+          const x = (i * stepX).toFixed(2)
+          const y = yFor(p, s.unit).toFixed(2)
+          if (p.daily == null) return ''
+          const neg = p.daily < 0
+          const num = s.unit === 'pct' ? `${p.daily > 0 ? '+' : ''}${p.daily.toFixed(1)}%` : `${p.daily > 0 ? '+' : ''}${p.daily.toFixed(0)}`
+          const label = neg ? `▼${num}` : num
+          return `<div style="position:absolute;left:${x}%;top:${y}%;transform:translate(-50%,${above ? '-190%' : '95%'});font-family:var(--font-mono);font-size:0.58rem;font-weight:${neg ? '800' : '600'};color:${s.color};white-space:nowrap;pointer-events:none">${label}</div>`
+        })
+        .join('')
+    })
+    .join('')
+
+  const legend = normalized
+    .map((s) => {
+      const last = s.norm[s.norm.length - 1]
+      const lastLabel = s.unit === 'pct' ? `${last.value > 0 ? '+' : ''}${last.value.toFixed(2)}%` : `${last.raw.toFixed(0)} (${last.value > 0 ? '+' : ''}${last.value.toFixed(0)})`
+      return `<span style="margin-right:0.9rem;white-space:nowrap"><span style="display:inline-block;width:9px;height:2px;background:${s.color};vertical-align:middle;margin-right:3px"></span><span class="muted" style="font-size:0.65rem">${s.label}</span> <strong style="font-size:0.65rem;color:${s.color};font-family:var(--font-mono)">${lastLabel}</strong></span>`
+    })
+    .join('')
+
+  const dateSeries = normalized[0].norm
+  const stepXd = 100 / Math.max(1, dateSeries.length - 1)
+
+  // Viés dia a dia — vira rótulo colorido no eixo, alinhado com o
+  // ponto do dia correspondente (em vez de barra separada embaixo,
+  // com as datas repetidas). Só a palavra, na cor do próprio viés.
+  const viesByDate = {}
+  for (const v of viesPorDia || []) viesByDate[v.date] = v.decisao
+  const VIES_SHORT = { compra: 'POS', venda: 'NEG', fora: 'NEU' }
+  const VIES_COLOR = { compra: 'var(--risk-on-strong)', venda: 'var(--risk-off-strong)', fora: 'var(--text-faint)' }
+
+  const dateLabels =
+    dateSeries.length <= 12
+      ? dateSeries
+          .map((p, i) => {
+            const dec = viesByDate[p.date]
+            const viesTag = dec
+              ? `<div style="font-size:0.55rem;font-weight:700;color:${VIES_COLOR[dec] || 'var(--text-faint)'};font-family:var(--font-mono);margin-top:1px" title="Viés em ${fmtDate(p.date)}: ${DECISAO_LABELS[dec] || dec}">${VIES_SHORT[dec] || ''}</div>`
+              : ''
+            return `<div style="position:absolute;left:${(i * stepXd).toFixed(2)}%;bottom:-4px;transform:translateX(-50%);text-align:center;white-space:nowrap">
+              <div style="font-size:0.55rem;color:var(--text-faint);font-family:var(--font-mono)">${fmtShortDate(p.date)}</div>
+              ${viesTag}
+            </div>`
+          })
+          .join('')
+      : ''
+
+  const hasVies = Object.keys(viesByDate).length > 0
+
+  return `
+    <div style="margin-bottom:0.3rem">${legend}</div>
+    <div style="position:relative;height:${height}px;padding:14px 6px ${hasVies ? '32px' : '18px'};">
+      <div style="position:relative;height:100%">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible;display:block">
+          <line x1="0" y1="${zeroY.toFixed(2)}" x2="100" y2="${zeroY.toFixed(2)}" stroke="var(--border)" stroke-dasharray="3,3" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+          ${paths}
+        </svg>
+        ${dots}
+        ${valueLabels}
+        ${dateLabels}
+      </div>
+    </div>
+    <p class="muted" style="font-size:0.6rem;margin-top:0.2rem">A <strong>linha</strong> mostra a tendência acumulada desde o 1º dia · o <strong>número</strong> em cada ponto é a variação daquele dia (score em pontos, índices em %)${hasVies ? ' · <strong>POS/NEU/NEG</strong> no eixo é o viés daquele dia' : ''}. Passe o mouse num ponto pra ver as duas leituras.</p>
+  `
+}
+
+// Gráfico de linha reaproveitável — usado no F&G e no Termômetro.
+// points = [{date, value}]. A escala se ajusta AO DADO REAL (não à
+// escala teórica cheia), senão uma variação de 39→42 numa escala de
+// -100 a +100 vira uma linha reta que não diz nada. hardMin/hardMax
+// limitam até onde o auto-ajuste pode ir (ex: F&G nunca passa de
+// 0-100). Mostra o valor em cada ponto quando são poucos dias.
+function renderLineChart(points, opts) {
+  const { hardMin, hardMax, height = 130, zeroLine, color = 'var(--accent)' } = opts
+  if (!points || points.length < 2) return ''
+
+  const values = points.map((p) => Number(p.value))
+  const dataMin = Math.min(...values)
+  const dataMax = Math.max(...values)
+  // Respiro de 20% do intervalo (ou 3 pontos, o que for maior) pra
+  // linha não colar no topo/fundo do gráfico.
+  const span = dataMax - dataMin
+  const pad = Math.max(span * 0.2, 3)
+  let min = dataMin - pad
+  let max = dataMax + pad
+  if (hardMin != null) min = Math.max(min, hardMin)
+  if (hardMax != null) max = Math.min(max, hardMax)
+  // Se zeroLine cair perto do intervalo, inclui — senão ignora, pra
+  // não achatar a linha de novo.
+  if (zeroLine != null && zeroLine >= min - span && zeroLine <= max + span) {
+    min = Math.min(min, zeroLine)
+    max = Math.max(max, zeroLine)
+  }
+  const range = max - min || 1
+
+  const stepX = 100 / (points.length - 1)
+  const coords = points.map((p, i) => ({
+    x: i * stepX,
+    y: 100 - ((Number(p.value) - min) / range) * 100,
+    value: Number(p.value),
+    date: p.date,
+  }))
+  const pathD = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(2)},${c.y.toFixed(2)}`).join(' ')
+  const zeroY = zeroLine != null && zeroLine >= min && zeroLine <= max ? 100 - ((zeroLine - min) / range) * 100 : null
+
+  const showLabels = points.length <= 12
+  // Bolinhas FORA do SVG — dentro dele viram elipse achatada, porque o
+  // preserveAspectRatio="none" (necessário pra linha ocupar a largura
+  // toda) estica o círculo junto.
+  const dots = coords
+    .map((c, i) => {
+      const isLast = i === coords.length - 1
+      const size = isLast ? 9 : 7
+      return `<div title="${fmtShortDate(c.date)}: ${c.value.toFixed(0)}" style="position:absolute;left:${c.x.toFixed(2)}%;top:${c.y.toFixed(2)}%;transform:translate(-50%,-50%);width:${size}px;height:${size}px;border-radius:50%;background:${color};border:1.5px solid var(--surface);cursor:help"></div>`
+    })
+    .join('')
+
+  const labels = showLabels
+    ? coords
+        .map(
+          (c, i) => `
+      <div style="position:absolute;left:${c.x.toFixed(2)}%;top:${c.y.toFixed(2)}%;transform:translate(-50%,-170%);font-family:var(--font-mono);font-size:0.6rem;font-weight:700;color:${color};white-space:nowrap;pointer-events:none">${c.value.toFixed(0)}</div>
+    `
+        )
+        .join('')
+    : ''
+
+  const dateLabels = showLabels
+    ? coords
+        .map(
+          (c) => `
+      <div style="position:absolute;left:${c.x.toFixed(2)}%;bottom:-2px;transform:translateX(-50%);font-family:var(--font-mono);font-size:0.55rem;color:var(--text-faint);white-space:nowrap;pointer-events:none">${fmtShortDate(c.date)}</div>
+    `
+        )
+        .join('')
+    : ''
+
+  return `
+    <div style="position:relative;height:${height}px;padding:14px 6px 16px;">
+      <div style="position:relative;height:100%;">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible;display:block">
+          ${zeroY != null ? `<line x1="0" y1="${zeroY.toFixed(2)}" x2="100" y2="${zeroY.toFixed(2)}" stroke="var(--border)" stroke-dasharray="3,3" stroke-width="0.8" vector-effect="non-scaling-stroke"/>` : ''}
+          <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        ${dots}
+        ${labels}
+        ${dateLabels}
+      </div>
+    </div>
+  `
+}
+
 function gaugePoint(score) {
   const angleRad = (gaugeAngle(score) * Math.PI) / 180
   const x = 100 + 85 * Math.sin(angleRad)
@@ -940,7 +1212,7 @@ function renderVeredictoBlock(v) {
   `
 }
 
-function renderSingleGauge(marketLabel, r, veredito, ontemScore, th) {
+function renderSingleGauge(marketLabel, r, veredito, ontemScore, th, history, veredictoHistory, indexSeries) {
   th = th || { forte: 40, fraco: 15, offMod: -15, offForte: -40 }
   if (!r) {
     return `
@@ -1013,18 +1285,68 @@ function renderSingleGauge(marketLabel, r, veredito, ontemScore, th) {
       ${deltaHtml}
       ${coberturaHtml}
       ${scoreDetailHtml}
+      ${
+        history && history.length >= 3
+          ? `<div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border);text-align:left">
+              <div class="muted" style="font-size:0.68rem;margin-bottom:0.4rem">Evolução — ${history.length} dias</div>
+              ${renderMultiLineChart(
+                [
+                  { label: 'Score', color: 'var(--neutral)', unit: 'abs', points: history },
+                  ...(indexSeries || []).map((s) => ({ ...s, unit: 'pct' })),
+                ],
+                { viesPorDia: veredictoHistory }
+              )}
+            </div>`
+          : ''
+      }
       ${renderVeredictoBlock(veredito)}
     </div>
   `
 }
 
-function renderGauge(regimes, veredictos, thresholds, regimeOntem) {
+function renderGauge(regimes, veredictos, thresholds, regimeOntem, regimeHist, veredictoHist, seriesBySymbolRef) {
   const byMarket = {}
   for (const r of regimes || []) byMarket[r.mercado] = r
   const veredictoByMarket = {}
   for (const v of veredictos || []) veredictoByMarket[v.mercado] = v
   const ontemByMarket = {}
   for (const r of regimeOntem || []) ontemByMarket[r.mercado] = Number(r.global_score)
+  const histByMarket = {}
+  for (const r of regimeHist || []) {
+    if (!histByMarket[r.mercado]) histByMarket[r.mercado] = []
+    histByMarket[r.mercado].push({ date: r.market_date, value: r.global_score })
+  }
+  const veredictoHistByMarket = {}
+  for (const v of veredictoHist || []) {
+    if (!veredictoHistByMarket[v.mercado]) veredictoHistByMarket[v.mercado] = []
+    veredictoHistByMarket[v.mercado].push({ date: v.market_date, decisao: v.decisao })
+  }
+
+  // Índices de referência por mercado — pra comparar o score com o que
+  // o mercado realmente fez no mesmo período.
+  const INDEX_BY_MARKET = {
+    eua: [
+      { sym: 'SPX', label: 'S&P 500', color: 'var(--accent)' },
+      { sym: 'NDX', label: 'Nasdaq', color: '#a78bfa' },
+    ],
+    brasil: [{ sym: 'IBOV', label: 'Ibovespa', color: 'var(--accent)' }],
+    europa: [{ sym: 'SX5E', label: 'Euro Stoxx', color: 'var(--accent)' }],
+    tech: [{ sym: 'XLK', label: 'XLK', color: 'var(--accent)' }],
+    semicondutores: [{ sym: 'SMH', label: 'SMH', color: 'var(--accent)' }],
+  }
+  function buildIndexSeries(mercado) {
+    const scoreHist = histByMarket[mercado]
+    if (!scoreHist || scoreHist.length < 3) return []
+    const firstDay = scoreHist[0].date
+    return (INDEX_BY_MARKET[mercado] || [])
+      .map((cfg) => {
+        const raw = (seriesBySymbolRef || {})[cfg.sym] || []
+        // Só o mesmo período do score, pra as linhas serem comparáveis
+        const points = raw.filter((p) => p.date >= firstDay).map((p) => ({ date: p.date, value: p.close }))
+        return points.length >= 2 ? { label: cfg.label, color: cfg.color, points } : null
+      })
+      .filter(Boolean)
+  }
 
   // Item 9: os limites de cada faixa já existiam (configuráveis),
   // só nunca apareciam pro usuário — usa o valor real se customizado,
@@ -1048,66 +1370,18 @@ function renderGauge(regimes, veredictos, thresholds, regimeOntem) {
     </details>
   `
 
-  // Item 6: mapa global compacto — leitura de 2 segundos antes de
-  // entrar nos gauges individuais. Global = média dos 3 países (não
-  // inclui setores, que são recorte mais específico).
-  const paisesComScore = ['eua', 'brasil', 'europa'].map((m) => byMarket[m]).filter(Boolean)
-  let mapaHtml = ''
-  if (paisesComScore.length > 0) {
-    const globalScore = paisesComScore.reduce((s, r) => s + Number(r.global_score), 0) / paisesComScore.length
-    const globalLabel = globalScore >= forte ? 'risk_on_forte' : globalScore >= fraco ? 'risk_on_fraco' : globalScore > offMod ? 'neutro' : globalScore > offForte ? 'risk_off_moderado' : 'risk_off_forte'
-    const globalColor = REGIME_COLORS[globalLabel]
-    const scores = Number(paisesComScore.reduce((s, r) => s + Number(r.global_score), 0) / paisesComScore.length)
-
-    // dispersão entre países — EUA em risk-on com Brasil em risk-off é
-    // informação por si só, não só a média escondendo os dois.
-    const paisScores = paisesComScore.map((r) => Number(r.global_score))
-    const dispersao = paisScores.length > 1 ? Math.max(...paisScores) - Math.min(...paisScores) : 0
-    const dispersaoLabel = dispersao >= 40 ? 'alta' : dispersao >= 15 ? 'média' : 'baixa'
-
-    const chipsHtml = [
-      ['eua', 'EUA'],
-      ['brasil', 'Brasil'],
-      ['europa', 'Europa'],
-      ['tech', 'Tech'],
-      ['semicondutores', 'Semi'],
-    ]
-      .map(([key, label]) => {
-        const r = byMarket[key]
-        if (!r) return ''
-        const s = Number(r.global_score)
-        const ontem = ontemByMarket[key]
-        const c = REGIME_COLORS[r.label]
-        let arrow = ''
-        if (ontem != null) {
-          const d = s - ontem
-          arrow = Math.abs(d) < 1 ? ' →' : d > 0 ? ` ↑${Math.abs(d).toFixed(0)}` : ` ↓${Math.abs(d).toFixed(0)}`
-        }
-        return `<span style="margin-right:1rem"><span class="muted">${label}</span> <strong style="color:${c}">${s.toFixed(0)}${arrow}</strong></span>`
-      })
-      .join('')
-
-    mapaHtml = `
-      <div class="card" style="padding:0.8rem 1.1rem;margin-bottom:1rem">
-        <div style="font-size:0.95rem"><strong style="color:${globalColor}">GLOBAL: ${REGIME_LABELS[globalLabel]} · ${scores.toFixed(0)}</strong> <span class="muted" style="font-size:0.78rem">· dispersão entre países: ${dispersaoLabel}</span></div>
-        <div style="margin-top:0.5rem;font-size:0.85rem">${chipsHtml}</div>
-      </div>
-    `
-  }
-
   return `
-    ${mapaHtml}
     ${legendaHtml}
     <div class="gauge-group-label">Países</div>
-    <div class="gauge-row">
-      ${renderSingleGauge('EUA', byMarket['eua'], veredictoByMarket['eua'], ontemByMarket['eua'], { forte, fraco, offMod, offForte })}
-      ${renderSingleGauge('Brasil', byMarket['brasil'], veredictoByMarket['brasil'], ontemByMarket['brasil'], { forte, fraco, offMod, offForte })}
-      ${renderSingleGauge('Europa', byMarket['europa'], veredictoByMarket['europa'], ontemByMarket['europa'], { forte, fraco, offMod, offForte })}
+    <div class="gauge-row stacked">
+      ${renderSingleGauge('EUA', byMarket['eua'], veredictoByMarket['eua'], ontemByMarket['eua'], { forte, fraco, offMod, offForte }, histByMarket['eua'], veredictoHistByMarket['eua'], buildIndexSeries('eua'))}
+      ${renderSingleGauge('Brasil', byMarket['brasil'], veredictoByMarket['brasil'], ontemByMarket['brasil'], { forte, fraco, offMod, offForte }, histByMarket['brasil'], veredictoHistByMarket['brasil'], buildIndexSeries('brasil'))}
+      ${renderSingleGauge('Europa', byMarket['europa'], veredictoByMarket['europa'], ontemByMarket['europa'], { forte, fraco, offMod, offForte }, histByMarket['europa'], veredictoHistByMarket['europa'], buildIndexSeries('europa'))}
     </div>
     <div class="gauge-group-label">Setores</div>
     <div class="gauge-row">
-      ${renderSingleGauge('Tech', byMarket['tech'], null, ontemByMarket['tech'], { forte, fraco, offMod, offForte })}
-      ${renderSingleGauge('Semicondutores', byMarket['semicondutores'], null, ontemByMarket['semicondutores'], { forte, fraco, offMod, offForte })}
+      ${renderSingleGauge('Tech', byMarket['tech'], null, ontemByMarket['tech'], { forte, fraco, offMod, offForte }, histByMarket['tech'], null, buildIndexSeries('tech'))}
+      ${renderSingleGauge('Semicondutores', byMarket['semicondutores'], null, ontemByMarket['semicondutores'], { forte, fraco, offMod, offForte }, histByMarket['semicondutores'], null, buildIndexSeries('semicondutores'))}
     </div>
   `
 }
@@ -1147,8 +1421,18 @@ const HORIZON_LETTER = { '1D': 'D', '1W': 'S', '1M': 'M' }
 function renderPredictionInstrument(item, latestBySymbol, accuracyByInstrument, ontemByKey) {
   const sym = escapeHtml(item.sym)
   const name = escapeHtml(item.name || '')
-  const current = latestBySymbol?.[item.sym]?.close
+  const latestData = latestBySymbol?.[item.sym]
+  const current = latestData?.close
   const horizons = ['1D', '1W', '1M']
+
+  // Se ainda não houve fechamento novo desde que os palpites foram
+  // emitidos, avisa UMA vez aqui — antes essa mensagem se repetia em
+  // D, S e M de cada ativo (3x por ativo, dezenas na página).
+  const marketDateDoItem = Object.values(item.byHorizon)[0]?.market_date
+  const semFechamentoNovo = marketDateDoItem && latestData?.market_date && latestData.market_date <= marketDateDoItem
+  const aguardandoBadge = semFechamentoNovo
+    ? `<span class="pred-accuracy low-sample" title="Nenhum pregão novo desde ${fmtDate(marketDateDoItem)} — não há como medir progresso ainda">aguardando fechamento</span>`
+    : ''
 
   const acc = accuracyByInstrument?.[item.instrumentId]
   const accBadge =
@@ -1173,24 +1457,45 @@ function renderPredictionInstrument(item, latestBySymbol, accuracyByInstrument, 
       const dateLabel = `<span class="pred-h-label" title="${HORIZON_LABELS[h]}">${HORIZON_LETTER[h]}·${fmtShortDate(p?.target_date)}</span>`
       if (!p) return `<div class="pred-h-col"><div class="pred-h-row">${dateLabel}<span class="muted" style="font-size:0.75rem">sem palpite</span></div></div>`
       const dir = directionClass(p.direction)
-      const range = p.magnitude_min_pct != null && p.magnitude_max_pct != null ? `${p.magnitude_min_pct}% a ${p.magnitude_max_pct}%` : ''
+      // Normaliza o sinal pela DIREÇÃO declarada. O dado histórico tem
+      // convenção inconsistente (1D vinha com sinal certo, 1W/1M vinham
+      // sem sinal negativo em palpites de baixa) — a tela corrige, senão
+      // aparece "↓ 0.5% a 2.5%", que se contradiz.
+      let range = ''
+      if (p.magnitude_min_pct != null && p.magnitude_max_pct != null) {
+        const a = Math.abs(Number(p.magnitude_min_pct))
+        const b = Math.abs(Number(p.magnitude_max_pct))
+        const lo = Math.min(a, b)
+        const hi = Math.max(a, b)
+        if (p.direction === 'baixa') range = `-${hi}% a -${lo}%`
+        else if (p.direction === 'alta') range = `+${lo}% a +${hi}%`
+        else range = `-${hi}% a +${hi}%`
+      }
       const est = estimateRange(p.reference_price, p.magnitude_min_pct, p.magnitude_max_pct, p.direction)
       const estText = est ? `→ ${fmtPrice(est.lo)} a ${fmtPrice(est.hi)}` : ''
-      const rationale = p.rationale ? `<details class="pred-details" style="margin-top:0.3rem"><summary>tese</summary><p class="detail-rationale">${escapeHtml(p.rationale)}</p></details>` : ''
+      const rationale = p.rationale
+        ? `<div style="margin-top:0.4rem;padding-left:0.5rem;border-left:2px solid var(--border)">
+            <span style="font-size:0.62rem;color:var(--text-faint);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em">tese</span>
+            <p class="detail-rationale" style="margin-top:0.1rem">${escapeHtml(p.rationale)}</p>
+          </div>`
+        : ''
 
       // Item 1: mudança vs. o palpite de ontem pro mesmo ativo+horizonte
       // — "MANTÉM" persistente é uma tese diferente de "VIROU" recente.
+      // Mostra a direção ANTERIOR junto: "era alta, virou lateral" conta
+      // uma história diferente de "era baixa, virou lateral", e só o
+      // destino não distingue os dois casos.
       const ontem = ontemByKey?.[item.instrumentId + '|' + h]
       let mudancaBadge = ''
       if (ontem) {
         if (ontem.direction !== p.direction) {
-          mudancaBadge = `<span class="pred-change virou" title="Ontem era ${ontem.direction}">VIROU ${directionArrow(p.direction)}</span>`
+          mudancaBadge = `<span class="pred-change virou" title="Ontem era ${ontem.direction}, hoje é ${p.direction}">de ${directionArrow(ontem.direction)} para ${directionArrow(p.direction)}</span>`
         } else {
           const deltaConf = p.confidence_pct - ontem.confidence_pct
           if (Math.abs(deltaConf) >= 5) {
-            mudancaBadge = `<span class="pred-change ${deltaConf > 0 ? 'reforcou' : 'enfraqueceu'}" title="Ontem: ${ontem.confidence_pct}%">CONV ${deltaConf > 0 ? '+' : ''}${deltaConf}pp</span>`
+            mudancaBadge = `<span class="pred-change ${deltaConf > 0 ? 'reforcou' : 'enfraqueceu'}" title="Mesma direção, mas a convicção ${deltaConf > 0 ? 'subiu' : 'caiu'}: era ${ontem.confidence_pct}%, agora ${p.confidence_pct}%">${deltaConf > 0 ? 'REFORÇOU' : 'ENFRAQUECEU'} ${deltaConf > 0 ? '+' : ''}${deltaConf}pp</span>`
           } else {
-            mudancaBadge = `<span class="pred-change mantem" title="Mesma direção e convicção parecida desde ontem">MANTÉM</span>`
+            mudancaBadge = `<span class="pred-change mantem" title="Mesma direção e convicção parecida desde o palpite anterior">MANTÉM</span>`
           }
         }
       }
@@ -1218,6 +1523,7 @@ function renderPredictionInstrument(item, latestBySymbol, accuracyByInstrument, 
         <span class="pred-name">${name}</span>
         ${alinhamentoBadge}
         ${accBadge}
+        ${aguardandoBadge}
         ${current != null ? `<span class="pred-current">atual: ${fmtPrice(current)}</span>` : ''}
       </div>
       <div class="pred-horizons-grid">${cols}</div>
@@ -1250,11 +1556,36 @@ function renderPredictions(preds, latestBySymbol, accuracyByInstrument, fluxos, 
   }
 
   const byClass = {}
-  const order = []
   for (const item of Object.values(byInstrument)) {
     const cls = item.cls || 'outros'
-    if (!byClass[cls]) { byClass[cls] = []; order.push(cls) }
+    if (!byClass[cls]) byClass[cls] = []
     byClass[cls].push(item)
+  }
+
+  // Ordem definida pelo Diego, por relevância pro acompanhamento dele —
+  // não é a ordem "natural" do banco nem alfabética.
+  const CLASS_ORDER = ['volatilidade', 'bolsas', 'cambio', 'cripto', 'commodities', 'juros_credito', 'futuros']
+  // Dentro de cada classe, esses vêm primeiro (na ordem listada); o
+  // resto segue depois, por convicção como antes.
+  const ASSET_PRIORITY = {
+    bolsas: ['NDX', 'SPX', 'IBOV', 'IBEX35'],
+    cambio: ['EURBRL'],
+  }
+
+  const order = Object.keys(byClass).sort((a, b) => {
+    const ia = CLASS_ORDER.indexOf(a)
+    const ib = CLASS_ORDER.indexOf(b)
+    return (ia === -1 ? CLASS_ORDER.length : ia) - (ib === -1 ? CLASS_ORDER.length : ib)
+  })
+
+  for (const cls in byClass) {
+    const prio = ASSET_PRIORITY[cls]
+    if (!prio) continue
+    byClass[cls].sort((a, b) => {
+      const ia = prio.indexOf(a.sym)
+      const ib = prio.indexOf(b.sym)
+      return (ia === -1 ? prio.length : ia) - (ib === -1 ? prio.length : ib)
+    })
   }
 
   return order.map(cls => {
@@ -1510,7 +1841,8 @@ function renderSynthesis(conc) {
 
 const MACRO_CHECKLIST = [
   { label: 'CPI', pais: 'eua', keywords: ['cpi'], weight: 5, subtitle: 'Preços ao Consumidor', description: 'Mede a inflação ao consumidor nos EUA. Acima do esperado costuma ser hawkish (pressiona o Fed a manter/subir juros); abaixo costuma ser dovish (abre espaço pra corte).' },
-  { label: 'Decisão do Fed', pais: 'eua', keywords: ['fed', 'fomc'], contextKeywords: ['juro', 'taxa', 'decisão', 'decidiu', 'corte', 'alta', 'reunião', 'rate', 'powell', 'manteve', 'reduziu', 'elevou'], weight: 5, subtitle: 'Banco central americano', description: 'Decisão de juros do banco central americano. Alta de juros geralmente fortalece o dólar e pressiona ações/growth; corte tende ao oposto.' },
+  { label: 'Decisão do Fed', pais: 'eua', keywords: ['fed', 'fomc'], contextKeywords: ['juro', 'taxa', 'decisão', 'decidiu', 'corte', 'alta', 'reunião', 'rate', 'powell', 'manteve', 'reduziu', 'elevou'], excludeKeywords: ['ata ', 'ata do', 'ata da', 'minutes'], weight: 5, subtitle: 'Banco central americano', description: 'Decisão de juros do banco central americano. Alta de juros geralmente fortalece o dólar e pressiona ações/growth; corte tende ao oposto.' },
+  { label: 'Ata do FOMC', pais: 'eua', keywords: ['ata ', 'ata do', 'ata da', 'minutes'], contextKeywords: ['fomc', 'fed', 'reserve'], weight: 4, subtitle: 'Registro do debate da reunião', description: 'Sai ~3 semanas depois de cada decisão do Fed e mostra o DEBATE interno: quantos membros queriam subir/cortar juros e por quê. Não muda taxa nenhuma, mas revela pra onde o comitê está inclinado — por isso costuma mover mercado mesmo sem decisão nova.' },
   { label: 'Mercado de Trabalho', pais: 'eua', keywords: ['payroll', 'folha de pagamento', 'nfp', 'emprego', 'desemprego', 'jolts', 'unemployment'], weight: 5, subtitle: 'Payroll, desemprego, salários', description: 'Payroll, desemprego e salários mensais dos EUA. Emprego forte costuma ser hawkish (Fed mantém juros altos); enfraquecimento abre espaço pra corte.' },
   { label: 'PCE', pais: 'eua', keywords: ['pce'], weight: 4, subtitle: 'Gastos de Consumo Pessoal', description: 'Medida de inflação preferida do Fed (mais completa que o CPI). Mesma lógica: acima é hawkish, abaixo é dovish.' },
   { label: 'PIB', pais: 'eua', keywords: ['pib', 'gdp'], weight: 4, subtitle: 'Produto Interno Bruto', description: 'Crescimento econômico trimestral dos EUA. Acima do esperado é sinal de economia forte — bom pra ações, mas pode ser hawkish se vier junto de inflação alta.' },
@@ -1535,8 +1867,14 @@ const MACRO_CHECKLIST = [
   { label: 'PIB', pais: 'reino_unido', keywords: ['pib', 'gdp'], weight: 3, subtitle: 'Produto Interno Bruto', description: 'Crescimento econômico trimestral do Reino Unido.' },
 ]
 
-function matchesKeyword(name, keywords, contextKeywords) {
+function matchesKeyword(name, keywords, contextKeywords, excludeKeywords) {
   const lower = (name || '').toLowerCase()
+  // Exclusão vem primeiro: permite separar eventos que compartilham o
+  // mesmo vocabulário mas são coisas diferentes — ex: "ata do FOMC"
+  // (registro do debate, não muda taxa) vs. "decisão do FOMC" (muda
+  // taxa). Sem isso, a ata era capturada como se fosse a decisão, e o
+  // card "Decisão do Fed" mostrava a data da ata como próxima reunião.
+  if (excludeKeywords && excludeKeywords.some((k) => lower.includes(k))) return false
   const hasMain = keywords.some((k) => lower.includes(k))
   if (!hasMain) return false
   // Pra casos como "Fed"/"BCE" onde a palavra sozinha aparece em
@@ -1665,7 +2003,7 @@ function dedupeByResult(items) {
 function newsMatchedChecklistItem(n) {
   return MACRO_CHECKLIST.find((ci) => {
     const paisOk = !n.pais || n.pais === ci.pais
-    return paisOk && matchesKeyword(n.headline + ' ' + (n.summary || ''), ci.keywords, ci.contextKeywords)
+    return paisOk && matchesKeyword(n.headline + ' ' + (n.summary || ''), ci.keywords, ci.contextKeywords, ci.excludeKeywords)
   })
 }
 
@@ -1677,26 +2015,53 @@ function updateMacroChecklistGrid() {
   const { macro, radarMacro } = macroChecklistData
   const matchedMacroIds = new Set()
 
-  // Próximas divulgações — os 5 mais próximos do Radar de tema macro,
-  // só data + o quê + bandeira, resumo compacto do "Próximo" que já
-  // aparece espalhado em cada card individual.
+  // Próximas divulgações — agrupadas por DATA (em vez de repetir a
+  // mesma data em cada linha), com HOJE/AMANHÃ destacados.
   const proximosEl = document.getElementById('macro-proximos-list')
   if (proximosEl) {
+    const amanha = (() => {
+      const d = new Date(today + 'T12:00:00')
+      d.setDate(d.getDate() + 1)
+      return d.toISOString().slice(0, 10)
+    })()
+
     const proximos = (radarMacro || [])
       .filter((r) => r.expected_date && r.expected_date >= today)
       .sort((a, b) => a.expected_date.localeCompare(b.expected_date))
-      .slice(0, 5)
+      .slice(0, 12)
+
+    // Agrupa por data
+    const porData = []
+    for (const r of proximos) {
+      let grupo = porData.find((g) => g.date === r.expected_date)
+      if (!grupo) {
+        grupo = { date: r.expected_date, itens: [] }
+        porData.push(grupo)
+      }
+      grupo.itens.push(r)
+    }
+
     proximosEl.innerHTML =
-      proximos.length > 0
-        ? proximos
+      porData.length > 0
+        ? porData
+            .map((g) => {
+              const isHoje = g.date === today
+              const isAmanha = g.date === amanha
+              const prefixo = isHoje ? 'HOJE · ' : isAmanha ? 'AMANHÃ · ' : ''
+              const cor = isHoje ? 'var(--accent)' : isAmanha ? 'var(--neutral)' : 'var(--text-faint)'
+              return `
+        <div style="margin-bottom:0.75rem">
+          <div style="font-family:var(--font-mono);font-size:0.7rem;font-weight:700;color:${cor};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem">${prefixo}${fmtDate(g.date)}</div>
+          ${g.itens
             .map(
-              (r) => `
-        <div class="item" style="padding:0.5rem 0.75rem;">
-          <span class="when">${fmtDate(r.expected_date)}</span>
-          <p class="headline" style="font-size:0.82rem">${PAIS_FLAGS[r.pais] || ''} ${escapeHtml(r.description)}</p>
+              (r) => `<div style="font-size:0.82rem;padding:0.15rem 0 0.15rem 0.6rem;border-left:2px solid var(--border)">
+              ${PAIS_FLAGS[r.pais] || ''} ${r.expected_time ? `<span class="muted" style="font-family:var(--font-mono);font-size:0.72rem">${escapeHtml(r.expected_time)}</span> · ` : ''}${escapeHtml(stripMarkdown(r.description))}
+            </div>`
+            )
+            .join('')}
         </div>
       `
-            )
+            })
             .join('')
         : `<p class="muted">Nada previsto no momento.</p>`
   }
@@ -1705,7 +2070,7 @@ function updateMacroChecklistGrid() {
   // dado ou "sem dado ainda"), mais qualquer dado real fora dos 12
   // ("não catalogado"). Nada de notícia/radar aqui — só número real.
   const checklistCards = MACRO_CHECKLIST.map((ci) => {
-    const allMatches = macro.filter((m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords))
+    const allMatches = macro.filter((m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords, ci.excludeKeywords))
     allMatches.forEach((m) => matchedMacroIds.add(m.indicator_name + '|' + m.release_date))
     const realized = dedupeByResult(allMatches)
 
@@ -1715,13 +2080,18 @@ function updateMacroChecklistGrid() {
     // mostrando "próximo" uma data que já passou) — pega sempre a
     // data futura mais próxima, ou incerta se não tiver data nenhuma.
     const pendingMatch = radarMacro
-      .filter((r) => (r.pais || guessCountryFromText(r.description)) === ci.pais && matchesKeyword(r.description, ci.keywords, ci.contextKeywords))
+      .filter((r) => (r.pais || guessCountryFromText(r.description)) === ci.pais && matchesKeyword(r.description, ci.keywords, ci.contextKeywords, ci.excludeKeywords))
       .filter((r) => !r.expected_date || r.expected_date >= today)
       .sort((a, b) => (a.expected_date || '9999-99-99').localeCompare(b.expected_date || '9999-99-99'))[0]
-    const proximoHtml = `<p style="font-size:0.72rem;margin-top:0.2rem"><span class="muted">Próximo: </span>${
+    const proximoDate = pendingMatch?.expected_date || null
+    const diasAte = proximoDate ? Math.round((new Date(proximoDate + 'T12:00:00') - new Date(today + 'T12:00:00')) / 86400000) : null
+    const diasLabel = diasAte == null ? '' : diasAte === 0 ? 'hoje' : diasAte === 1 ? 'amanhã' : `em ${diasAte} dias`
+    const proximoHtml = `<p style="font-size:0.75rem;margin-top:0.35rem;padding-top:0.35rem;border-top:1px dashed var(--border)">${
       pendingMatch
-        ? `<span style="color:var(--neutral)">${pendingMatch.expected_date ? fmtShortDate(pendingMatch.expected_date) : 'data incerta'}</span>`
-        : '<span class="muted">—</span>'
+        ? proximoDate
+          ? `<span class="muted">📅 Próximo: </span><strong style="color:var(--neutral);font-family:var(--font-mono)">${fmtShortDate(proximoDate)}</strong>${diasLabel ? ` <span class="muted">· ${diasLabel}</span>` : ''}`
+          : `<span class="muted">📅 Próximo: </span><span style="color:var(--neutral)">data incerta</span>`
+        : '<span class="muted">📅 Próximo: —</span>'
     }</p>`
 
     let bodyHtml
@@ -1748,6 +2118,7 @@ function updateMacroChecklistGrid() {
     return {
       score: ci.weight,
       pais: ci.pais,
+      proximoDate,
       hasData: realized.length > 0,
       vsConsensus: realized.length > 0 ? realized[0].vs_consensus : null,
       direcaoBolsa: realized.length > 0 ? realized[0].direcao_bolsa : null,
@@ -1795,6 +2166,7 @@ function updateMacroChecklistGrid() {
     return {
       score: macroImportanceScore(g.label),
       pais: g.pais,
+      proximoDate: null,
       hasData: true,
       vsConsensus: deduped[0]?.vs_consensus || null,
       direcaoBolsa: deduped[0]?.direcao_bolsa || null,
@@ -1810,13 +2182,19 @@ function updateMacroChecklistGrid() {
   // Agrupa por país primeiro (mais fácil de escanear), importância só
   // decide a ordem dentro de cada país — não catalogados sem país vão
   // pro final.
-  const PAIS_ORDER = ['brasil', 'eua', 'europa', 'china', 'reino_unido']
+  // Ordena pela PRÓXIMA DIVULGAÇÃO (mais próxima primeiro) — a pergunta
+  // operacional aqui é "qual desses indicadores muda primeiro?". Cards
+  // sem data conhecida vão explicitamente pro FINAL (não dependem de
+  // como null se comporta na comparação), desempatados por importância.
   const allCards = [...checklistCards, ...uncataloguedCards].sort((a, b) => {
-    const pa = PAIS_ORDER.indexOf(a.pais)
-    const pb = PAIS_ORDER.indexOf(b.pais)
-    const ia = pa === -1 ? PAIS_ORDER.length : pa
-    const ib = pb === -1 ? PAIS_ORDER.length : pb
-    if (ia !== ib) return ia - ib
+    const da = a.proximoDate || null
+    const db = b.proximoDate || null
+    if (da && db) {
+      if (da !== db) return da.localeCompare(db)
+      return b.score - a.score
+    }
+    if (da && !db) return -1
+    if (!da && db) return 1
     return b.score - a.score
   })
   grid.innerHTML = allCards.map((c) => c.html).join('')
@@ -1824,34 +2202,43 @@ function updateMacroChecklistGrid() {
   const totalEl = document.getElementById('kpi-total-count')
   if (totalEl) totalEl.textContent = allCards.length
 
-  const aguardandoEl = document.getElementById('kpi-aguardando-count')
-  if (aguardandoEl) aguardandoEl.textContent = checklistCards.filter((c) => !c.hasData).length
-
-  // Conta a partir do MESMO conjunto de cards exibidos (não da lista
-  // bruta do banco) — assim monitorados = aguardando + soma destes 4.
-  const vsCounts = { acima: 0, abaixo: 0, em_linha: 0, sem_consenso: 0 }
-  for (const c of allCards) {
-    if (c.vsConsensus && vsCounts[c.vsConsensus] != null) vsCounts[c.vsConsensus]++
+  // Próximo evento datado — o primeiro card já está ordenado por isso.
+  const proximoCard = allCards.find((c) => c.proximoDate)
+  const proximoEventoEl = document.getElementById('kpi-proximo-evento')
+  if (proximoEventoEl) {
+    if (proximoCard) {
+      const dias = Math.round((new Date(proximoCard.proximoDate + 'T12:00:00') - new Date(today + 'T12:00:00')) / 86400000)
+      const quando = dias === 0 ? 'hoje' : dias === 1 ? 'amanhã' : `em ${dias}d`
+      proximoEventoEl.innerHTML = `${fmtShortDate(proximoCard.proximoDate)} <span class="muted" style="font-size:0.75rem">· ${quando}</span>`
+    } else {
+      proximoEventoEl.textContent = '—'
+    }
   }
-  const acimaEl = document.getElementById('kpi-acima-count')
-  if (acimaEl) acimaEl.textContent = vsCounts.acima
-  const abaixoEl = document.getElementById('kpi-abaixo-count')
-  if (abaixoEl) abaixoEl.textContent = vsCounts.abaixo
-  const emLinhaEl = document.getElementById('kpi-emlinha-count')
-  if (emLinhaEl) emLinhaEl.textContent = vsCounts.em_linha
-  const semConsensoEl = document.getElementById('kpi-semconsenso-count')
-  if (semConsensoEl) semConsensoEl.textContent = vsCounts.sem_consenso
 
-  const direcaoCounts = { sobe: 0, desce: 0, neutro: 0 }
-  for (const c of allCards) {
-    if (c.direcaoBolsa && direcaoCounts[c.direcaoBolsa] != null) direcaoCounts[c.direcaoBolsa]++
-  }
-  const sobeEl = document.getElementById('kpi-sobe-count')
-  if (sobeEl) sobeEl.textContent = `📈 ${direcaoCounts.sobe}`
-  const desceEl = document.getElementById('kpi-desce-count')
-  if (desceEl) desceEl.textContent = `📉 ${direcaoCounts.desce}`
-  const neutroEl = document.getElementById('kpi-neutro-count')
-  if (neutroEl) neutroEl.textContent = `➡️ ${direcaoCounts.neutro}`
+  // Quantos indicadores têm divulgação nos próximos 7 dias.
+  const em7dias = (() => {
+    const limite = new Date(today + 'T12:00:00')
+    limite.setDate(limite.getDate() + 7)
+    const limiteStr = limite.toISOString().slice(0, 10)
+    return allCards.filter((c) => c.proximoDate && c.proximoDate <= limiteStr).length
+  })()
+  const em7El = document.getElementById('kpi-7dias-count')
+  if (em7El) em7El.textContent = em7dias
+
+  // "Fora do consenso · 7d": divulgações dos últimos 7 dias que vieram
+  // acima OU abaixo do consenso. Definição objetiva de propósito — não
+  // tenta julgar se acima/abaixo é bom ou ruim (isso depende do
+  // indicador: CPI abaixo é bom, PIB abaixo é ruim), só conta surpresa.
+  const seteDiasAtras = (() => {
+    const d = new Date(today + 'T12:00:00')
+    d.setDate(d.getDate() - 7)
+    return d.toISOString().slice(0, 10)
+  })()
+  const foraConsenso7d = (macro || []).filter(
+    (m) => m.release_date && m.release_date >= seteDiasAtras && m.release_date <= today && (m.vs_consensus === 'acima' || m.vs_consensus === 'abaixo')
+  ).length
+  const foraConsensoEl = document.getElementById('kpi-fora-consenso')
+  if (foraConsensoEl) foraConsensoEl.textContent = foraConsenso7d
 }
 
 async function renderCalendar() {
@@ -1875,44 +2262,22 @@ async function renderCalendar() {
   const kpiHtml = `
     <div class="class-group">
       <div style="background:var(--surface-2);border-radius:10px;padding:1rem 1.25rem;">
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-          <div style="flex:1;text-align:center;min-width:80px;">
+        <div style="display:flex;gap:1.25rem;flex-wrap:wrap;">
+          <div style="flex:1;text-align:center;min-width:90px;">
             <div id="kpi-total-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text)">–</div>
             <div class="muted" style="font-size:0.7rem">monitorados</div>
           </div>
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-aguardando-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--neutral)">–</div>
-            <div class="muted" style="font-size:0.7rem">aguardando dado</div>
+          <div style="flex:1.3;text-align:center;min-width:110px;">
+            <div id="kpi-proximo-evento" style="font-family:var(--font-mono);font-size:1.15rem;font-weight:700;color:var(--neutral)">–</div>
+            <div class="muted" style="font-size:0.7rem">próximo evento</div>
           </div>
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-acima-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-on-strong)">–</div>
-            <div class="muted" style="font-size:0.7rem">acima do consenso</div>
+          <div style="flex:1;text-align:center;min-width:90px;">
+            <div id="kpi-7dias-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--accent)">–</div>
+            <div class="muted" style="font-size:0.7rem">eventos em 7 dias</div>
           </div>
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-abaixo-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">–</div>
-            <div class="muted" style="font-size:0.7rem">abaixo</div>
-          </div>
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-emlinha-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text-faint)">–</div>
-            <div class="muted" style="font-size:0.7rem">em linha</div>
-          </div>
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-semconsenso-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--accent)">–</div>
-            <div class="muted" style="font-size:0.7rem">sem consenso</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;padding-top:0.75rem;border-top:1px dashed var(--border);">
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-sobe-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;">📈 –</div>
-            <div class="muted" style="font-size:0.7rem">tendem a subir</div>
-          </div>
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-desce-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;">📉 –</div>
-            <div class="muted" style="font-size:0.7rem">tendem a cair</div>
-          </div>
-          <div style="flex:1;text-align:center;min-width:80px;">
-            <div id="kpi-neutro-count" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;">➡️ –</div>
-            <div class="muted" style="font-size:0.7rem">neutros</div>
+          <div style="flex:1;text-align:center;min-width:110px;">
+            <div id="kpi-fora-consenso" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text)">–</div>
+            <div class="muted" style="font-size:0.7rem" title="Divulgações dos últimos 7 dias que vieram acima OU abaixo do consenso — conta surpresa, sem julgar se foi boa ou ruim (depende do indicador)">fora do consenso · 7d</div>
           </div>
         </div>
       </div>
@@ -2001,7 +2366,7 @@ async function renderConfig(marketDate) {
   // input" é enorme, e antes não dava pra saber olhando a tela.
   const marketDataCount = new Set((marketToday || []).map((m) => m.instrument_id)).size
   const macroMatched = MACRO_CHECKLIST.filter((ci) =>
-    (macroRecent || []).some((m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords))
+    (macroRecent || []).some((m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords, ci.excludeKeywords))
   ).length
   const cenariosCount = (cenariosToday || []).length
   const cenariosSum = (cenariosToday || []).reduce((s, c) => s + Number(c.probabilidade || 0), 0)
@@ -2100,7 +2465,6 @@ async function renderFearGreedDetail() {
     .from('fear_greed')
     .select('id, market_date, index_value, label, fear_greed_components(component, value, label)')
     .order('market_date', { ascending: false })
-    .limit(30)
   const history = (historyDesc || []).slice().reverse()
 
   if (!history || history.length === 0) {
@@ -2118,33 +2482,13 @@ async function renderFearGreedDetail() {
   if (history.length < 3) {
     notEnoughNote = `Gráfico de tendência aparece com mais dias acumulados (hoje: ${history.length} dia${history.length === 1 ? '' : 's'} de histórico).`
   } else {
-    const bars = history
-      .map((h) => {
-        const val = Number(h.index_value)
-        const heightPct = Math.max(4, val)
-        const color = val >= 55 ? 'var(--risk-on-strong)' : val <= 45 ? 'var(--risk-off-strong)' : 'var(--text-faint)'
-        const d = new Date(h.market_date + 'T12:00:00')
-        const shortDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
-        return `
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
-          <span style="font-family:var(--font-mono);font-size:0.62rem;font-weight:700;color:${color};margin-bottom:3px;">${val.toFixed(0)}</span>
-          <div style="width:60%;height:${heightPct}%;background:${color};border-radius:2px 2px 0 0;" title="${fmtDate(h.market_date)}: ${val.toFixed(0)}"></div>
-        </div>
-      `
-      })
-      .join('')
-    const dateLabels = history
-      .map((h) => {
-        const d = new Date(h.market_date + 'T12:00:00')
-        return `<span style="flex:1;text-align:center">${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</span>`
-      })
-      .join('')
+    const lastVal = Number(latest.index_value)
+    const lineColor = lastVal >= 55 ? 'var(--risk-on-strong)' : lastVal <= 45 ? 'var(--risk-off-strong)' : 'var(--text-faint)'
+    const points = history.map((h) => ({ date: h.market_date, value: h.index_value }))
     chartHtml = `
-      <div style="position:relative;height:70px;margin-top:1rem;">
-        <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--border);"></div>
-        <div style="display:flex;align-items:flex-end;height:100%;gap:3px;position:relative;">${bars}</div>
+      <div style="margin-top:1rem;margin-bottom:0.5rem;">
+        ${renderLineChart(points, { hardMin: 0, hardMax: 100, zeroLine: 50, color: lineColor })}
       </div>
-      <div style="display:flex;font-size:0.6rem;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:0.5rem;gap:3px;">${dateLabels}</div>
     `
   }
 
@@ -2322,14 +2666,25 @@ async function renderTrackRecord() {
   let erroMagnitudeSoma = 0
   let erroMagnitudeCount = 0
   for (const r of withMag) {
-    const absRet = Math.abs(Number(r.actual_return_pct))
+    const ret = Number(r.actual_return_pct)
+    const absRet = Math.abs(ret)
     const absMin = Math.min(Math.abs(r.predictions.magnitude_min_pct), Math.abs(r.predictions.magnitude_max_pct))
     const absMax = Math.max(Math.abs(r.predictions.magnitude_min_pct), Math.abs(r.predictions.magnitude_max_pct))
     const ok = r.direction_correct && (r.predictions.direction === 'lateral' ? absRet <= absMax : absRet >= absMin && absRet <= absMax)
     if (ok) faixaCorreta++
     else {
-      const erro = absRet < absMin ? absMin - absRet : absRet - absMax
-      erroMagnitudeSoma += erro
+      // O erro precisa ser medido COM SINAL, na direção prevista. Se a
+      // previsão era alta e o ativo caiu, o erro é a distância inteira
+      // (do retorno negativo até o piso positivo da faixa), não a
+      // diferença entre magnitudes absolutas — senão "previu +2% e veio
+      // -2%" apareceria como erro zero.
+      const dir = r.predictions.direction
+      let lo, hi
+      if (dir === 'alta') { lo = absMin; hi = absMax }
+      else if (dir === 'baixa') { lo = -absMax; hi = -absMin }
+      else { lo = -absMax; hi = absMax }
+      const erro = ret < lo ? lo - ret : ret > hi ? ret - hi : 0
+      erroMagnitudeSoma += Math.abs(erro)
       erroMagnitudeCount++
     }
   }
@@ -2394,12 +2749,17 @@ async function renderTrackRecord() {
   }
   let momentumCorrect = 0
   let momentumTotal = 0
+  // Mede o SISTEMA exatamente nos mesmos casos onde o momentum existe —
+  // senão a comparação é injusta (sistema em n=191 vs. momentum em
+  // n=137, universos diferentes). Só o mesmo subconjunto é comparável.
+  let sistemaNosMesmosCasos = 0
   for (const key in byInstHorizon) {
     const rows = byInstHorizon[key].sort((a, b) => a.predictions.target_date.localeCompare(b.predictions.target_date))
     for (let i = 1; i < rows.length; i++) {
       if (rows[i].direction_actual == null || rows[i - 1].direction_actual == null) continue
       momentumTotal++
       if (rows[i].direction_actual === rows[i - 1].direction_actual) momentumCorrect++
+      if (rows[i].direction_correct) sistemaNosMesmosCasos++
     }
   }
   const momentumHtml =
@@ -2407,12 +2767,59 @@ async function renderTrackRecord() {
       ? `<p class="muted" style="margin-top:0.3rem">Baseline "momentum simples" — só 1D (repete a direção do dia anterior do mesmo ativo): ${((momentumCorrect / momentumTotal) * 100).toFixed(0)}% (n=${momentumTotal})</p>`
       : ''
 
-  // Resumo compacto pro topo da aba — o mesmo dado, só resumido numa
-  // linha, pra quem entra na aba querendo ver "o que ele está
-  // prevendo agora" e não o histórico completo primeiro.
+  // Resumo compacto pro topo da aba. O comparativo com os baselines vem
+  // JUNTO de propósito: "38%" sozinho não diz nada — o que importa é se
+  // isso é melhor ou pior que uma regra burra. Se estiver perdendo pro
+  // baseline, isso precisa estar visível, não escondido no rodapé.
   if (summaryEl) {
     const horizonSummary = byHorizon.map((x) => `${HORIZON_LETTER[x.h]} ${x.pct}%`).join(' · ')
-    summaryEl.innerHTML = `<p style="font-size:0.85rem;margin:0"><strong>Track record:</strong> ${pct}% geral${horizonSummary ? ` · ${horizonSummary}` : ''} · n=${total} <span class="muted">— detalhe completo no final da página</span></p>`
+    const momentumPct = momentumTotal > 0 ? (momentumCorrect / momentumTotal) * 100 : null
+    // Compara o sistema com o momentum NO MESMO SUBCONJUNTO — comparar
+    // 191 casos do sistema contra 137 do momentum seria injusto.
+    const sistemaPctMesmosCasos = momentumTotal > 0 ? (sistemaNosMesmosCasos / momentumTotal) * 100 : null
+    const perdeMomentum = momentumPct != null && sistemaPctMesmosCasos != null && sistemaPctMesmosCasos < momentumPct
+    const perdeLateral = Number(pct) < Number(baselinePct)
+    const perdendoPraBaseline = perdeMomentum || perdeLateral
+
+    const comparativo = `<span class="muted"> · baseline lateral ${baselinePct}%</span>`
+    const momentumHtml =
+      momentumPct != null
+        ? `<div class="muted" style="font-size:0.72rem;margin-top:0.2rem">Nos mesmos ${momentumTotal} casos comparáveis (só 1D): sistema <strong style="color:${perdeMomentum ? 'var(--neutral)' : 'var(--text)'}">${sistemaPctMesmosCasos.toFixed(0)}%</strong> vs. momentum simples <strong>${momentumPct.toFixed(0)}%</strong></div>`
+        : ''
+
+    const alerta = perdendoPraBaseline
+      ? `<div style="font-size:0.75rem;color:var(--neutral);margin-top:0.25rem">⚠ O sistema ainda não supera as réguas simples — com ${total} palpites resolvidos, ainda é amostra pequena pra concluir, mas vale acompanhar.</div>`
+      : ''
+
+    // Melhor e pior classe sobem pro topo porque mudam COMO você lê um
+    // card específico. Exige n>=20, MESMA régua usada pra colorir o selo
+    // 🎯 de cada ativo — senão "Volatilidade 71% (5/7)" apareceria em
+    // destaque como se fosse confiável, competindo com classes de n=69.
+    const AMOSTRA_MINIMA = 20
+    const classesOrdenadas = Object.entries(byClass)
+      .filter(([, v]) => v.total >= AMOSTRA_MINIMA)
+      .map(([cls, v]) => ({ cls, pct: (v.correct / v.total) * 100, total: v.total }))
+      .sort((a, b) => b.pct - a.pct)
+    let classHint = ''
+    if (classesOrdenadas.length >= 2) {
+      const melhor = classesOrdenadas[0]
+      const pior = classesOrdenadas[classesOrdenadas.length - 1]
+      classHint = `<span>Melhor em <strong>${ASSET_CLASS_LABELS[melhor.cls] || melhor.cls}</strong> (${melhor.pct.toFixed(0)}%, n=${melhor.total}) · pior em <strong>${ASSET_CLASS_LABELS[pior.cls] || pior.cls}</strong> (${pior.pct.toFixed(0)}%, n=${pior.total})</span>`
+    } else {
+      classHint = `<span>Comparação por classe aparece quando alguma tiver n≥${AMOSTRA_MINIMA}</span>`
+    }
+
+    // Se a convicção não separa acerto de erro, isso é um aviso de
+    // leitura — não dê peso ao número de convicção nos cards.
+    let convHint = ''
+    if (avgConfCorrect != null && avgConfWrong != null && Math.abs(avgConfCorrect - avgConfWrong) < 3) {
+      convHint = `<span style="color:var(--neutral)">convicção declarada não discrimina acerto de erro</span>`
+    }
+
+    const hints = [classHint, convHint].filter(Boolean).join(' <span class="muted">·</span> ')
+    const hintsHtml = hints ? `<div class="muted" style="font-size:0.72rem;margin-top:0.25rem">${hints}</div>` : ''
+
+    summaryEl.innerHTML = `<p style="font-size:0.85rem;margin:0"><strong>Track record:</strong> <strong style="color:${perdendoPraBaseline ? 'var(--neutral)' : 'var(--text)'}">${pct}%</strong> geral${horizonSummary ? ` · ${horizonSummary}` : ''} · n=${total}${comparativo}</p>${momentumHtml}${alerta}${hintsHtml}`
   }
 
   el.innerHTML = `
@@ -2503,14 +2910,16 @@ function renderHorizonTraceRow(p, marketDate, latestBySymbol) {
   // julgar "acertando/errando" comparando o preço com ele mesmo.
   const hasNewerData = latestData?.market_date && latestData.market_date > marketDate
 
+  // Sem fechamento novo desde o palpite: não há nada pra medir ainda.
+  // Retorna vazio de propósito — o aviso aparece UMA vez no cabeçalho do
+  // ativo, não repetido em D, S e M (eram 3 repetições por ativo).
+  if (!hasNewerData) return ''
+
   let detailLine = `<div class="trace-h-line muted">sem dado atual pra medir progresso</div>`
   let progressBar = ''
   let miniHtml = `<span class="trace-h-status pending">não julgado</span>`
 
-  if (!hasNewerData) {
-    miniHtml = `<span class="trace-h-status pending">aguardando fechamento</span>`
-    detailLine = `<div class="trace-h-line muted">ainda sem fechamento novo desde ${fmtDate(marketDate)} · estava: ${fmtPrice(p.reference_price)}</div>`
-  } else if (current != null && p.reference_price != null) {
+  if (current != null && p.reference_price != null) {
     const actualPct = ((current - p.reference_price) / p.reference_price) * 100
     const absActual = Math.abs(actualPct)
     const hasMag = p.magnitude_min_pct != null && p.magnitude_max_pct != null
@@ -2671,56 +3080,83 @@ function renderNoticiasRadar(events, radar, kpiHasDataMap) {
 
   if (items.length === 0) return `<p class="muted">Nada registrado ainda.</p>`
 
-  // KPI rápido: 2 fileiras — Notícias (total, risk-on, risk-off, alto
-  // impacto) e Radar (total pendente, alta importância) — separados,
-  // não misturados numa linha só.
+  // KPI de LEITURA, não de contagem: o que o dia diz, não quantos cards
+  // existem. Os totais brutos ficam como nota pequena no rodapé — saber
+  // que há 10 notícias não ajuda a decidir nada.
   let totalNoticias = 0
   let riskOn = 0
   let riskOff = 0
-  let altoImpactoNoticia = 0
+  let noticiasMateriais = 0
   let totalRadarPendente = 0
-  let altaImportanciaRadar = 0
+  let radarCritico = 0
+  let proximoGatilho = null
   for (const it of items) {
     if (it.type === 'noticia') {
       totalNoticias++
       if (it.tag === 'risk_on' || it.tag === 'positivo') riskOn++
       if (it.tag === 'risk_off' || it.tag === 'negativo') riskOff++
-      if (it.newsImportance === 'alta') altoImpactoNoticia++
+      if (it.newsImportance === 'alta') noticiasMateriais++
     }
     if (it.type === 'radar' && !it.expired) {
       totalRadarPendente++
-      if (it.tag === 'alta') altaImportanciaRadar++
+      if (it.tag === 'alta') radarCritico++
     }
   }
+
+  // Próximo gatilho = evento de radar datado mais próximo, priorizando
+  // alta importância (é o que você realmente precisa ter no calendário).
+  const radarFuturo = (radar || [])
+    .filter((r) => r.expected_date && r.expected_date >= today)
+    .sort((a, b) => a.expected_date.localeCompare(b.expected_date))
+  const gatilhoAlta = radarFuturo.find((r) => r.importance === 'alta')
+  const gatilhoEscolhido = gatilhoAlta || radarFuturo[0]
+  if (gatilhoEscolhido) {
+    const desc = gatilhoEscolhido.description || ''
+    proximoGatilho = {
+      // corta na primeira vírgula/travessão pra caber no KPI
+      label: desc.length > 42 ? desc.slice(0, 42).replace(/[\s,;:—-]+\S*$/, '') + '…' : desc,
+      date: gatilhoEscolhido.expected_date,
+      full: desc,
+    }
+  }
+
+  // Viés líquido do dia — saldo entre risk-on e risk-off, traduzido em
+  // leitura, não em 2 números soltos que você teria que comparar.
+  const saldo = riskOn - riskOff
+  let viesLabel
+  let viesColor
+  if (saldo >= 3) { viesLabel = 'Risk-On'; viesColor = 'var(--risk-on-strong)' }
+  else if (saldo >= 1) { viesLabel = 'Risk-On leve'; viesColor = 'var(--risk-on)' }
+  else if (saldo === 0) { viesLabel = 'Equilibrado'; viesColor = 'var(--neutral)' }
+  else if (saldo >= -2) { viesLabel = 'Risk-Off leve'; viesColor = 'var(--risk-off)' }
+  else { viesLabel = 'Risk-Off'; viesColor = 'var(--risk-off-strong)' }
+
   const kpiHtml = `
     <div style="background:var(--surface-2);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
-      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-        <div style="flex:1;text-align:center;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text)">${totalNoticias}</div>
-          <div class="muted" style="font-size:0.7rem">notícias</div>
+      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;align-items:flex-start;">
+        <div style="flex:1.4;min-width:130px;">
+          <div style="font-family:var(--font-mono);font-size:1.15rem;font-weight:700;color:${viesColor}">${viesLabel}</div>
+          <div class="muted" style="font-size:0.7rem">viés do dia <span title="${riskOn} risk-on vs. ${riskOff} risk-off entre as notícias de hoje" style="cursor:help">(${riskOn}↑ / ${riskOff}↓)</span></div>
         </div>
-        <div style="flex:1;text-align:center;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-on-strong)">${riskOn}</div>
-          <div class="muted" style="font-size:0.7rem">risk-on</div>
+        <div style="flex:1;text-align:center;min-width:90px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--text)">${noticiasMateriais}</div>
+          <div class="muted" style="font-size:0.7rem" title="Notícias marcadas como alta importância">notícias materiais</div>
         </div>
-        <div style="flex:1;text-align:center;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">${riskOff}</div>
-          <div class="muted" style="font-size:0.7rem">risk-off</div>
+        <div style="flex:1;text-align:center;min-width:90px;">
+          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:${radarCritico > 0 ? 'var(--neutral)' : 'var(--text-faint)'}">${radarCritico}</div>
+          <div class="muted" style="font-size:0.7rem" title="Eventos futuros de alta importância no radar">radar crítico</div>
         </div>
-        <div style="flex:1;text-align:center;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">${altoImpactoNoticia}</div>
-          <div class="muted" style="font-size:0.7rem">alto impacto</div>
+        <div style="flex:1.6;min-width:150px;">
+          ${
+            proximoGatilho
+              ? `<div style="font-family:var(--font-mono);font-size:0.85rem;font-weight:700;color:var(--accent)" title="${escapeHtml(proximoGatilho.full)}">${fmtShortDate(proximoGatilho.date)} · ${escapeHtml(proximoGatilho.label)}</div>`
+              : `<div class="muted" style="font-size:0.85rem">—</div>`
+          }
+          <div class="muted" style="font-size:0.7rem">próximo gatilho datado</div>
         </div>
       </div>
-      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;padding-top:0.75rem;border-top:1px dashed var(--border);">
-        <div style="flex:1;text-align:center;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--neutral)">${totalRadarPendente}</div>
-          <div class="muted" style="font-size:0.7rem">no radar</div>
-        </div>
-        <div style="flex:1;text-align:center;min-width:80px;">
-          <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--risk-off-strong)">${altaImportanciaRadar}</div>
-          <div class="muted" style="font-size:0.7rem">alta importância</div>
-        </div>
+      <div class="muted" style="font-size:0.65rem;margin-top:0.6rem;padding-top:0.5rem;border-top:1px dashed var(--border);">
+        ${totalNoticias} notícia${totalNoticias === 1 ? '' : 's'} · ${totalRadarPendente} item${totalRadarPendente === 1 ? '' : 's'} no radar (pendentes)
       </div>
     </div>
   `
@@ -2764,7 +3200,14 @@ function renderNoticiaRadarItem(it) {
       <p class="headline">${escapeHtml(it.title)}</p>
       ${it.detail ? `<p class="summary">${escapeHtml(it.detail)}</p>` : ''}
       ${assetsHtml}
-      ${it.porQueImporta ? `<details class="pred-details" style="margin-top:0.3rem"><summary>por que importa</summary><p>${escapeHtml(it.porQueImporta)}</p></details>` : ''}
+      ${
+        it.porQueImporta
+          ? `<div style="margin-top:0.45rem;padding-left:0.6rem;border-left:2px solid var(--accent)">
+              <span style="font-size:0.68rem;color:var(--accent);font-weight:700;font-family:var(--font-mono)">→ IMPACTO</span>
+              <p class="summary" style="margin-top:0.15rem">${escapeHtml(it.porQueImporta)}</p>
+            </div>`
+          : ''
+      }
       ${it.source ? `<p class="muted" style="font-size:0.68rem;margin-top:0.2rem">Fonte: ${escapeHtml(it.source)}</p>` : ''}
     </div>
   `
@@ -2786,7 +3229,7 @@ async function updateNoticiasRadarKpi() {
   const kpiHasDataMap = {}
   for (const ci of MACRO_CHECKLIST) {
     const hasMatch = (macro || []).some(
-      (m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords)
+      (m) => (m.pais || guessCountryFromText(m.indicator_name)) === ci.pais && matchesKeyword(m.indicator_name, ci.keywords, ci.contextKeywords, ci.excludeKeywords)
     )
     kpiHasDataMap[ci.label + '|' + ci.pais] = hasMatch
   }
@@ -2905,9 +3348,17 @@ async function renderThemeTrends(driversToday) {
           .join('')
         const latest = series[series.length - 1]
         const first = series[0]
-        const trendArrow = latest.avg > first.avg + 0.5 ? '↑' : latest.avg < first.avg - 0.5 ? '↓' : '→'
+        // Separa IMPACTO (positivo/negativo, e quanto) de TENDÊNCIA
+        // (se essa influência vem crescendo ou diminuindo ao longo dos
+        // dias) — juntar os dois numa frase só produzia contradição
+        // visual do tipo "↑ influência -5.0/10".
+        const trendLabel = latest.avg > first.avg + 0.5 ? 'crescendo' : latest.avg < first.avg - 0.5 ? 'diminuindo' : 'estável'
+        const impactColor = latest.avg > 0 ? 'var(--risk-on-strong)' : latest.avg < 0 ? 'var(--risk-off-strong)' : 'var(--text-faint)'
         trendHtml = `
-          <div class="muted" style="font-size:0.68rem;margin-bottom:0.2rem">${trendArrow} influência ${latest.avg > 0 ? '+' : ''}${latest.avg.toFixed(1)}/10 (histórico, positivo/negativo)</div>
+          <div style="font-size:0.68rem;margin-bottom:0.2rem">
+            <span class="muted">Impacto:</span> <strong style="color:${impactColor}">${latest.avg > 0 ? '+' : ''}${latest.avg.toFixed(1)}/10</strong>
+            <span class="muted" style="margin-left:0.5rem">Tendência da influência: ${trendLabel}</span>
+          </div>
           <div style="position:relative;height:32px;">
             <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--border);"></div>
             <div style="display:flex;height:100%;gap:2px;position:relative;">${bars}</div>
@@ -2968,12 +3419,13 @@ async function loadDashboard(forcedDate) {
     const marketDateIdx = availableDays.indexOf(marketDate)
     const previousMarketDate = marketDateIdx >= 0 && marketDateIdx + 1 < availableDays.length ? availableDays[marketDateIdx + 1] : null
 
-    const [marketDataRes, regimeRes, regimeOntemRes, concRes, predsRes, predsOntemRes, eventsRes, radarRes, cenariosRes, cenariosOntemRes, veredictoRes, fluxoRes, driversRes, runStatusRes, accuracyRes, regimeThresholdsRes] = await Promise.all([
+    const [marketDataRes, regimeRes, regimeOntemRes, regimeHistRes, concRes, predsRes, predsOntemRes, eventsRes, radarRes, cenariosRes, cenariosOntemRes, veredictoRes, veredictoHistRes, fluxoRes, driversRes, runStatusRes, accuracyRes, regimeThresholdsRes] = await Promise.all([
       sb.from('market_data').select('close,change_pct,market_date,instruments(symbol_internal)').order('market_date', { ascending: false }),
       sb.from('regime_diario').select('*').eq('market_date', marketDate),
       previousMarketDate
         ? sb.from('regime_diario').select('mercado,global_score').eq('market_date', previousMarketDate)
         : Promise.resolve({ data: [] }),
+      sb.from('regime_diario').select('mercado,global_score,market_date').lte('market_date', marketDate).order('market_date', { ascending: true }),
       sb.from('conclusao_operacional').select('texto,driver_do_dia,drivers_ainda_ativos,narrativa_dominante,sinais_alerta,o_que_mercado_precisa,correlacao_do_dia,regime_condicional,divergencia_sinais,confirmacao_cross_asset,narrativa_semana,narrativa_mes').eq('market_date', marketDate).maybeSingle(),
       sb.from('predictions').select('*,instruments(symbol_internal,name,asset_class)').eq('market_date', marketDate).order('confidence_pct', { ascending: false }),
       previousMarketDate
@@ -2986,6 +3438,7 @@ async function loadDashboard(forcedDate) {
         ? sb.from('cenarios').select('tipo,probabilidade').eq('market_date', previousMarketDate)
         : Promise.resolve({ data: [] }),
       sb.from('veredito_operacional').select('mercado,decisao,razao,invalidation_note').eq('market_date', marketDate),
+      sb.from('veredito_operacional').select('mercado,decisao,market_date').lte('market_date', marketDate).order('market_date', { ascending: true }),
       sb.from('fluxo_por_classe').select('asset_class,status,motivo').eq('market_date', marketDate),
       sb.from('drivers').select('nome,tema,direcao,forca,tendencia,proximo_passo').eq('market_date', marketDate),
       sb.from('analysis_runs').select('status,notes').eq('market_date', marketDate).maybeSingle(),
@@ -3014,6 +3467,21 @@ async function loadDashboard(forcedDate) {
       const sym = row.instruments?.symbol_internal
       if (!sym || latestBySymbol[sym]) continue
       latestBySymbol[sym] = row
+    }
+
+    // Série histórica por símbolo (só até o dia selecionado, pra não
+    // vazar futuro no modo histórico) — usada pra desenhar a linha do
+    // índice junto da evolução do score no Termômetro. Reaproveita o
+    // dado que já foi buscado, sem query nova.
+    const seriesBySymbol = {}
+    for (const row of marketDataRes.data || []) {
+      const sym = row.instruments?.symbol_internal
+      if (!sym || !row.market_date || row.market_date > marketDate) continue
+      if (!seriesBySymbol[sym]) seriesBySymbol[sym] = []
+      seriesBySymbol[sym].push({ date: row.market_date, close: Number(row.close) })
+    }
+    for (const sym in seriesBySymbol) {
+      seriesBySymbol[sym].sort((a, b) => a.date.localeCompare(b.date))
     }
 
     const loadedAt = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -3053,9 +3521,21 @@ async function loadDashboard(forcedDate) {
       healthLabel = 'falhou'
       healthBanner = `<div class="health-banner error">✗ Pipeline falhou — ${escapeHtml(runStatusRes.data?.notes || '')}</div>`
     } else if (runStatus === 'running') {
-      healthDotClass = 'muted'
-      healthDotTitle = 'Pipeline ainda em andamento hoje'
-      healthLabel = 'em andamento'
+      // "running" só é normal pro dia de HOJE (pipeline ainda rodando).
+      // Num dia passado, "running" significa que travou no meio —
+      // alguma etapa quebrou antes de conseguir marcar sucesso/falha
+      // formalmente, e ficou parado nesse estado pra sempre.
+      const runDate = marketDate
+      if (runDate < todayBRTClient()) {
+        healthDotClass = 'error'
+        healthDotTitle = 'Pipeline travado — não chegou a concluir'
+        healthLabel = 'travado'
+        healthBanner = `<div class="health-banner error">✗ Pipeline de ${fmtDate(runDate)} travou — não chegou a marcar sucesso nem falha. Alguma etapa provavelmente quebrou no meio. Vale checar os logs das Edge Functions desse dia.</div>`
+      } else {
+        healthDotClass = 'muted'
+        healthDotTitle = 'Pipeline ainda em andamento hoje'
+        healthLabel = 'em andamento'
+      }
     }
 
     const daySelectorHtml = availableDays.length > 1
@@ -3087,7 +3567,7 @@ async function loadDashboard(forcedDate) {
       </nav>
 
       <div class="tab-panel ${currentMainTab === 'termometro' ? 'active' : ''}" id="tab-termometro">
-        ${renderGauge(regimeRes.data, veredictoRes.data, regimeThresholdsRes.data, regimeOntemRes.data)}
+        ${renderGauge(regimeRes.data, veredictoRes.data, regimeThresholdsRes.data, regimeOntemRes.data, regimeHistRes.data, veredictoHistRes.data, seriesBySymbol)}
         <section>
           <p class="eyebrow">Sentimento EUA</p>
           <div class="card" id="fg-detail"><p class="muted">carregando…</p></div>
@@ -3113,7 +3593,7 @@ async function loadDashboard(forcedDate) {
         </section>
 
         <section>
-          <p class="eyebrow">Palpites (${(predsRes.data || []).length})</p>
+          <p class="eyebrow">Palpites — ${new Set((predsRes.data || []).map((p) => p.instrument_id)).size} ativos · ${(predsRes.data || []).length} previsões</p>
           <details class="pred-details" style="margin-bottom:0.75rem">
             <summary>o que significa positivo/negativo/neutro (viés por classe)</summary>
             <p><strong>Positivo:</strong> evidência de apetite por risco entrando naquela classe — geralmente preço subindo. Isso é viés de preço, não fluxo real de capital (fundos/ETF) — não estamos coletando esse dado.</p>
