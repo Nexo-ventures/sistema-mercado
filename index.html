@@ -1304,6 +1304,194 @@ function renderSingleGauge(marketLabel, r, veredito, ontemScore, th, history, ve
   `
 }
 
+// ===== PRÉVIA DO FECHAMENTO =====
+// Fotografia intradiária (T-60 do fechamento da NYSE) que TESTA se a
+// leitura gerada na noite anterior está se sustentando. Vocabulário
+// deliberadamente neutro e sem verde/vermelho fortes: quem abre essa
+// aba pode estar tentado a agir só pelo tom, e ela não é sinal de
+// compra — é acompanhamento.
+const PREVIA_STATUS_LABELS = {
+  confirmada: 'Leitura de ontem CONFIRMADA',
+  parcial: 'Leitura de ontem PARCIALMENTE confirmada',
+  contrariada: 'Leitura de ontem CONTRARIADA',
+  indeterminada: 'INDETERMINADA — sem movimento suficiente pra dizer',
+}
+const PREVIA_STATUS_COLOR = {
+  confirmada: 'var(--accent)',
+  parcial: 'var(--neutral)',
+  contrariada: 'var(--neutral)',
+  indeterminada: 'var(--text-faint)',
+}
+const CROSS_STATUS_MARK = { confirma: '✓', nao_confirma: '✗', neutro: '~', sem_dado: '—' }
+const CROSS_STATUS_COLOR = {
+  confirma: 'var(--accent)',
+  nao_confirma: 'var(--neutral)',
+  neutro: 'var(--text-faint)',
+  sem_dado: 'var(--text-faint)',
+}
+const CROSS_CLASSE_LABELS = { juros: 'Juros', dolar: 'Dólar', credito: 'Crédito', equities: 'Ações', amplitude: 'Amplitude', vix: 'VIX', cripto: 'Cripto' }
+const PRESSAO_LABELS = { melhorando: '↑ melhorando', piorando: '↓ piorando', estavel: '→ estável', sem_dado: '— sem dado' }
+const PRESSAO_COLOR = { melhorando: 'var(--accent)', piorando: 'var(--neutral)', estavel: 'var(--text-faint)', sem_dado: 'var(--text-faint)' }
+const COMPONENTE_LABELS = { equities: 'Ações', credito: 'Crédito', volatilidade: 'Volatilidade', juros: 'Juros', cambio: 'Câmbio' }
+const EVOLUCAO_LABELS = { ganhando_evidencia: 'ganhando evidência', perdendo_evidencia: 'perdendo evidência', sem_mudanca: 'sem mudança' }
+const INVALIDACAO_LABELS = { acionada: 'ACIONADA', nao_acionada: 'não acionada', nao_verificavel: 'não verificável' }
+const INVALIDACAO_COLOR = { acionada: 'var(--neutral)', nao_acionada: 'var(--text-faint)', nao_verificavel: 'var(--text-faint)' }
+
+async function renderPrevia() {
+  const el = document.getElementById('previa-content')
+  if (!el) return
+
+  const { data: previa, error } = await sb
+    .from('previa_fechamento')
+    .select('*')
+    .order('captured_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    el.innerHTML = `<div class="error">ERRO DE CONSULTA ao buscar a prévia: ${escapeHtml(error.message)}</div>`
+    return
+  }
+
+  if (!previa) {
+    el.innerHTML = `
+      <div class="card">
+        <p class="muted">Nenhuma prévia gerada ainda.</p>
+        <p class="muted" style="margin-top:0.5rem;font-size:0.8rem">A Prévia é uma rodada <strong>manual</strong>, feita cerca de 1 hora antes do fechamento da NYSE. Ela não gera palpites nem recomendações — só testa se a leitura da noite anterior está se sustentando durante o pregão.</p>
+      </div>
+    `
+    return
+  }
+
+  const { data: cenarios } = await sb.from('previa_cenarios').select('*').eq('previa_id', previa.previa_id).order('tipo')
+
+  const capturedAt = new Date(previa.captured_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  const statusColor = PREVIA_STATUS_COLOR[previa.status] || 'var(--text-muted)'
+
+  const cross = Array.isArray(previa.cross_asset) ? previa.cross_asset : []
+  const relevantes = cross.filter((c) => c.relevante)
+  const confirmamRelevantes = relevantes.filter((c) => c.status === 'confirma').length
+  const comDado = cross.filter((c) => c.status !== 'sem_dado')
+
+  const crossHtml =
+    cross.length > 0
+      ? `
+    <section>
+      <p class="eyebrow">Confirmação cross-asset</p>
+      <div class="card">
+        <p class="muted" style="font-size:0.72rem;margin-bottom:0.6rem">${confirmamRelevantes} de ${relevantes.length} sinais <strong>relevantes pra tese de hoje</strong> confirmam · ${comDado.length} de ${cross.length} classes com dado disponível. As classes marcadas como relevantes pesam mais na leitura do dia — não trate como se todas valessem igual.</p>
+        ${cross
+          .map(
+            (c) => `
+          <div style="display:flex;gap:0.6rem;align-items:flex-start;padding:0.35rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:${CROSS_STATUS_COLOR[c.status] || 'var(--text-faint)'};font-weight:700;min-width:14px">${CROSS_STATUS_MARK[c.status] || '?'}</span>
+            <div style="flex:1">
+              <span style="font-size:0.82rem;font-weight:${c.relevante ? '700' : '400'}">${CROSS_CLASSE_LABELS[c.classe] || c.classe}</span>
+              ${c.relevante ? `<span class="tag" style="margin-left:0.4rem;font-size:0.6rem;color:var(--text-muted)">relevante hoje</span>` : ''}
+              ${c.nota ? `<div class="muted" style="font-size:0.75rem;margin-top:0.1rem">${escapeHtml(c.nota)}</div>` : ''}
+            </div>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    </section>
+  `
+      : ''
+
+  const pressao = Array.isArray(previa.pressao_regime) ? previa.pressao_regime : []
+  const pressaoHtml =
+    pressao.length > 0
+      ? `
+    <section>
+      <p class="eyebrow">Pressão sobre o regime</p>
+      <div class="card">
+        <p class="muted" style="font-size:0.72rem;margin-bottom:0.6rem">Direção de cada componente hoje vs. o fechamento anterior. <strong>Não é o score de regime recalculado</strong> — aquele é calibrado em dado de fechamento e não vale intradiário.</p>
+        ${pressao
+          .map(
+            (p) => `
+          <div style="display:flex;justify-content:space-between;gap:0.6rem;padding:0.3rem 0;border-bottom:1px solid var(--border)">
+            <div style="flex:1">
+              <span style="font-size:0.82rem">${COMPONENTE_LABELS[p.componente] || p.componente}</span>
+              ${p.nota ? `<div class="muted" style="font-size:0.72rem">${escapeHtml(p.nota)}</div>` : ''}
+            </div>
+            <span style="font-family:var(--font-mono);font-size:0.75rem;color:${PRESSAO_COLOR[p.direcao] || 'var(--text-faint)'};white-space:nowrap">${PRESSAO_LABELS[p.direcao] || p.direcao}</span>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    </section>
+  `
+      : ''
+
+  const cenariosHtml =
+    cenarios && cenarios.length > 0
+      ? `
+    <section>
+      <p class="eyebrow">Teste dos cenários de ontem</p>
+      <div class="card">
+        <p class="muted" style="font-size:0.72rem;margin-bottom:0.6rem">As probabilidades são as <strong>originais de ontem</strong> — não são recalculadas aqui. A prévia só reporta se a evidência de hoje reforça ou enfraquece cada cenário.</p>
+        ${cenarios
+          .map(
+            (c) => `
+          <div style="padding:0.6rem 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+              <span class="cenario-tipo ${c.tipo}">${CENARIO_LABELS[c.tipo] || c.tipo}</span>
+              ${c.probabilidade_original != null ? `<span class="muted" style="font-size:0.75rem">${Number(c.probabilidade_original).toFixed(0)}% ontem</span>` : ''}
+              <span style="font-size:0.72rem;color:var(--text-muted)">${EVOLUCAO_LABELS[c.evolucao] || c.evolucao}</span>
+            </div>
+            ${c.evidencia_a_favor ? `<p style="font-size:0.78rem;margin-top:0.3rem"><span class="muted">A favor: </span>${escapeHtml(c.evidencia_a_favor)}</p>` : ''}
+            ${c.evidencia_contra ? `<p style="font-size:0.78rem;margin-top:0.2rem"><span class="muted">Contra: </span>${escapeHtml(c.evidencia_contra)}</p>` : ''}
+            <p style="font-size:0.72rem;margin-top:0.3rem">
+              <span class="muted">Invalidação: </span>
+              <strong style="color:${INVALIDACAO_COLOR[c.invalidacao_status] || 'var(--text-faint)'}">${INVALIDACAO_LABELS[c.invalidacao_status] || c.invalidacao_status}</strong>
+              ${c.invalidacao_nota ? `<span class="muted"> — ${escapeHtml(c.invalidacao_nota)}</span>` : ''}
+            </p>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    </section>
+  `
+      : ''
+
+  el.innerHTML = `
+    <div class="card" style="border-left:3px solid ${statusColor}">
+      <div style="font-size:1rem;font-weight:700;color:${statusColor}">${PREVIA_STATUS_LABELS[previa.status] || previa.status}</div>
+      <div class="muted" style="font-size:0.7rem;margin-top:0.15rem">capturado em ${capturedAt} · testando a leitura de ${fmtDate(previa.testando_leitura_de)}</div>
+      ${previa.resumo ? `<p class="prose-p" style="margin-top:0.6rem">${escapeHtml(previa.resumo)}</p>` : ''}
+    </div>
+
+    ${
+      previa.o_que_mudou
+        ? `<section>
+            <p class="eyebrow">O que mudou desde a rodada da noite</p>
+            <div class="card"><p class="prose-p" style="margin:0">${escapeHtml(previa.o_que_mudou)}</p></div>
+          </section>`
+        : ''
+    }
+
+    ${
+      previa.ate_o_fechamento
+        ? `<section>
+            <p class="eyebrow">O que observar até o fechamento</p>
+            <div class="card"><p class="prose-p" style="margin:0">${escapeHtml(previa.ate_o_fechamento)}</p></div>
+          </section>`
+        : ''
+    }
+
+    ${cenariosHtml}
+    ${crossHtml}
+    ${pressaoHtml}
+
+    <p class="muted" style="font-size:0.7rem;margin-top:1.5rem;padding-top:0.75rem;border-top:1px dashed var(--border)">
+      A Prévia é uma rodada manual feita ~1h antes do fechamento da NYSE. Ela <strong>não gera palpites, preços-alvo nem recomendação de compra/venda</strong> — a função dela é testar se a leitura da noite anterior está se sustentando. Dado intradiário oscila e pode reverter na última hora: o que se vê aqui não é o fechamento.
+    </p>
+  `
+}
+
 function renderGauge(regimes, veredictos, thresholds, regimeOntem, regimeHist, veredictoHist, seriesBySymbolRef) {
   const byMarket = {}
   for (const r of regimes || []) byMarket[r.mercado] = r
@@ -3559,6 +3747,7 @@ async function loadDashboard(forcedDate) {
 
       <nav class="tab-nav">
         <button class="tab-btn ${currentMainTab === 'termometro' ? 'active' : ''}" data-tab="termometro" onclick="switchMainTab('termometro')">Termômetro</button>
+        <button class="tab-btn ${currentMainTab === 'previa' ? 'active' : ''}" data-tab="previa" onclick="switchMainTab('previa')">Prévia</button>
         <button class="tab-btn ${currentMainTab === 'palpites' ? 'active' : ''}" data-tab="palpites" onclick="switchMainTab('palpites')">Palpites</button>
         <button class="tab-btn ${currentMainTab === 'analise' ? 'active' : ''}" data-tab="analise" onclick="switchMainTab('analise')">Análise</button>
         <button class="tab-btn ${currentMainTab === 'noticias' ? 'active' : ''}" data-tab="noticias" onclick="switchMainTab('noticias')">Notícias &amp; Radar</button>
@@ -3572,6 +3761,10 @@ async function loadDashboard(forcedDate) {
           <p class="eyebrow">Sentimento EUA</p>
           <div class="card" id="fg-detail"><p class="muted">carregando…</p></div>
         </section>
+      </div>
+
+      <div class="tab-panel ${currentMainTab === 'previa' ? 'active' : ''}" id="tab-previa">
+        <div id="previa-content"><p class="muted">carregando…</p></div>
       </div>
 
       <div class="tab-panel ${currentMainTab === 'palpites' ? 'active' : ''}" id="tab-palpites">
@@ -3654,6 +3847,7 @@ async function loadDashboard(forcedDate) {
     `
 
     renderFearGreedDetail()
+    renderPrevia()
     renderTrackRecord()
     renderPalpitesRastreabilidade(marketDate, latestBySymbol)
     renderThemeTrends(driversRes.data)
